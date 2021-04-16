@@ -1,0 +1,14 @@
+int amavariable , donald, hjhjsjse;
+
+float k, bestbelieve2;
+amavariable =bestbelieve= 5;
+k=b=0.0;
+e = 6;
+if ( a > d)
+{
+e = a - d; 
+}
+else{ 
+k = b + 6.0;  
+}
+

@@ -1,0 +1,14 @@
+a>b;
+float var , var, vra;
+float var, vv;
+a=b= 5;
+k=b=0.0;
+e = 6;
+while ( a > d)
+{
+e = a - d; 
+}
+else{ 
+k = b + 6.0;  
+
+}
