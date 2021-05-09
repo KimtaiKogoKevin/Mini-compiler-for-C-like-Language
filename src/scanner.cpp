@@ -184,7 +184,7 @@ bool validIdentifier(char *str)
 bool isKeyword(char *str)
 {
 	if (!strcmp(str, "if") || !strcmp(str, "else") ||
-		!strcmp(str, "while") || !strcmp(str, "int") || !strcmp(str, "float") || !strcmp(str, "return"))
+		 !strcmp(str, "int") || !strcmp(str, "float") || !strcmp(str, "return"))
 		return (true);
 	return (false);
 }
@@ -295,12 +295,13 @@ void scan(char *str) //str pointer parameter stores address of character array
 				}
 				else
 				{
-					printf("we have an error boss");
+					printf("we have an error ");
 				}
 			}
 
 			else if (isInteger(subStr) == true)
 			{
+				
 				printf("'%s' : integer\n \n", subStr);
 				if (st.insert(subStr, "local", "number", 4))
 				{
@@ -324,9 +325,16 @@ void scan(char *str) //str pointer parameter stores address of character array
 				}
 			}
 			else if (validIdentifier(subStr) == true && isDelimiter(str[right - 1]) == false)
-			{
+			{    
+				
 				printf("'%s' : accepted identifier \n \n", subStr);
-				if (st.insert(subStr, "local", "identifier", 4))
+
+			//	check =st.find(subStr);
+
+				
+
+				
+				if (st.insert(subStr, "local", "identifier", 9))
 				{
 					// printf("inserted to symbol table \n");
 				}
@@ -359,7 +367,7 @@ int main()
 	fclose(ptr_file);
 
 	//find and print 'number'
-    check = st.find("float");
+    check = st.find("k");
     if (check != "-1")
         cout << "Identifier Is present\n";
     else

@@ -1,407 +1,1067 @@
 #include <iostream>
-#include<iostream>
-#include<fstream>
-#include<ctype.h>
-#include<string>
-
+#include <fstream>
+#include <iomanip>
+#include <unordered_map> // need to add -std=c++11 under Tools->Compiler Options
+#include <unordered_set>
+#include <vector>
+ #include <string>
 using namespace std;
-int line_no; // global declaration of error number
 
-
-//Top-down parsing; Recursive descent
-
-enum token{
-	if_keyword , else_keyword,int_keyword,float_keyword, greater_than_sy, less_than_sy, lparn_sy, rparn_sy, plus_sy, subtract_sy, id , int_sy, real_sy,lcurlybrace_sy,rcurlybrace_sy,semi_colon_sy,comma_sy,equal_op_sy,
-	error_sy, end_source_sy
-};
-
-class parser{
-
-	private:
-		ifstream f;
-		token curr_token;
-//***************************************
-		token check_reserved (string s){
-			if (s=="if")
-				{ 
-					return if_keyword;
-				}
-			else if (s=="else") 
-				{ 
-					return else_keyword;
-				}
-			else if (s=="int")
-				 { 
-					 return  int_keyword; 
-				 }
-				 else if (s=="while")
-				 { 
-					 return  error_sy ; 
-				 }
-
-
-			else if (s=="float")
-				 {
-					  return  float_keyword;
-				 }else return id;
-		}
-//******************************************
-		token get_token(){
-
-			char ch;
-			string s;
-			int state = 0;
-
-
-			while(state>=0 && state <=16 && !f.eof()){
-
-				switch(state){
-					case 0:
-						f.get(ch);
-						if (f.eof()) return end_source_sy;
-						else if (isspace(ch)) {s=ch; state = 0;}
-						else if (isdigit(ch)) {s=ch; state = 1;}
-						else if (ch=='.') {s=ch; state = 2;}
-
-						else if (isalpha(ch)) {s=ch; state = 4;} 
-						else if (ch=='<') state = 5;
-						else if (ch=='>') state = 6;
-						else if (ch=='+') state = 7;
-						else if (ch=='-') state = 8;
-						else if (ch=='(') state = 9;
-						else if (ch==')') state = 10;
-						else if (ch=='{') state = 11;
-						else if (ch=='}') state = 12;
-						else if (ch==',') state = 13;
-						else if (ch==';') state = 14;
-						else if (ch=='=') state=15;
-
-						else state = 16;
-						break;
-
-					case 1:
-						f.get(ch);	//5555
-						if (isdigit(ch)) {s+=ch; state=1;}
-						else if (ch=='.') state=3;
-						else {f.putback(ch); return int_sy;}
-						break;
-
-					case 2:
-						f.get(ch);
-						if (isdigit(ch)) {s+=ch; state=2;}
-						else
-						{
-							f.putback(ch);
-							return real_sy;
-						}
-						break;
-
-					case 3:
-						f.get(ch);
-						if (isdigit(ch)) {s+=ch; state=3;}
-						else
-						{
-							f.putback(ch);
-							return real_sy;
-						}
-						break;
-
-					case 4:
-						f.get(ch);
-						if(isalnum(ch)) {s+=ch; state=4;}
-						else
-						{
-							f.putback(ch); //return extracted input back to inputstring
-							return check_reserved(s);
-
-						}
-						break;
-
-					case 5:
-						//f.get(ch);
-						if(ch=='<') return less_than_sy;
-						else return error_sy;
-						break;
-
-					case 6:
-						//f.get(ch);
-						if(ch=='>' ) return greater_than_sy;
-						else return error_sy;
-						break;
-
-					case 7:
-						return plus_sy; break;
-
-					case 8:
-						return subtract_sy; break;
-
-					case 9:
-						return lparn_sy; break;
-
-					case 10:
-						return rparn_sy; break;
-					case 11:
-						return lcurlybrace_sy; break;
-					case 12:
-						return rcurlybrace_sy; break;
-					case 13:
-						return comma_sy; break;
-					case 14:
-					     return semi_colon_sy;  
-						
-						 break;
-						 
-					case 15:
-					 return equal_op_sy; break;
-					
-					case 16:
-						
-						return error_sy; break;
-
-
-				}
-			}
-			return end_source_sy;
-		}
-//****************************************
-
-	string name(token t){
-
-		switch(t){
-
-			case if_keyword: return "if token";break;
-			case else_keyword: return "else token";break;
-			case int_keyword: return "int token";break;
-			case float_keyword: return "float token";break;
-			case greater_than_sy: return " > logical operater";break;
-			case less_than_sy: return " < logical  operater";break;
-			case id: return "identifier";break;
-			case int_sy: return "number";break;
-			case real_sy: return "decimalno ";break;
-			case plus_sy: return "+ operater ";break;
-			case subtract_sy: return "- operater ";break;
-			case lparn_sy: return "( delimiter";break;
-			case rparn_sy: return ") delimiter";break;
-			case lcurlybrace_sy: return "{ delimiter";break;
-			case rcurlybrace_sy: return "} delimiter";break;
-			case semi_colon_sy: return "; delimiter ";break;
-			case comma_sy: return ", delimiter ";break;
-			case equal_op_sy: return "= equal ";break;
-			case error_sy: return "INVALID";break;
-			case end_source_sy: return "End of file";break;
-
-		}
-
-		return "error token";
-	}
-//****************************************
-
+// A class that holds all necessary information about variables and functions from the input file.
+class symbolInfo
+{
+	int scope; // the scope this symbol was initially declared on
+	string type; // the data type of this symbol
+	vector<string> arguments; // the list of arguments the symbol accepts if it's a function
 	public:
-
-
-		parser(string filename){
-			f.open(filename.c_str());
-		}
-
-		~parser(){
-			f.close();
-		}
-		void match(token terminal){
-
-
-			if (curr_token == terminal)
-                if( name(curr_token) == "int token" )
-                {
-                    cout<<name(curr_token)<<" is matched >>>>> RULE: dec -> int id " << endl << endl;
-                }
-
-
-               else if( name(curr_token) == "float token" )
-               {
-                   cout<<name(curr_token)<<" is matched >>>>> RULE : dec -> float id ; >> <expr-seq>" << endl <<endl;
-               }
-			    else if( f.eof())
-               {
-                   cout<<name(curr_token)<<" PARSE ACCEPTED" << endl <<endl;
-               }
-
-
-				else
-                {
-
-
-                    // OUR RULES
-                   // cout << "<id>      ::= <L> | <id><L-or-D>" << endl;
-                   // cout << "<int>     ::= <D> | <int> <D>" << endl;
-                    cout<<name(curr_token)<<" is matched == " << name(curr_token) <<endl <<endl;
-
-                }
-
-
-			else
-				syntax_error(curr_token,line_no);
-			curr_token = get_token();
-		}
-
-		void syntax_error(token terminal , int line ){
-			//cout<<name(terminal)<<"  is not expected on " "[" << line << "]" " \n";
-			 ReadDataFromStream(f);
-			
-			
-			
-			
-			 //printf("Not logical value at line number %d in file %s\n", __LINE__, __FILE__);
-		}
-
-int getCurrentLine(std::istream& f)
-{
-    int lineCount = 1;
-    f.clear();     // need to clear error bits otherwise tellg returns -1.
-    auto originalPos = f.tellg();
-    if (originalPos < 0) 
-        return -1;
-    f.seekg(0);
-    char c;
-    while ((f.tellg() < originalPos) && f.get(c))
-    {
-        if (c == '\n') ++lineCount;
-    }
-    return lineCount;
-}
-
-void ReadDataFromStream(std::istream& f)
-{
-   double x, y, z;
-    while (!f.fail() && !f.eof())
-    {
-        f >> x >> y >> z;
-        if (!f.fail())
-            std::cout << x << "," << y << "," << z << "\n";
-    }
-
-    if (f.fail())
-        std::cout << "Error at line: " << getCurrentLine(f) << " Unexpected Token" "\n";
-    else
-        std::cout << "Read until line: " << getCurrentLine(f) << "\n";
-}
-
-	
-
-
-
-		void sample_parser(){
-			curr_token = get_token();
-			program();
-			match(end_source_sy);
-
-		}
-
-		//<program> ::= cin  >>  <expr-seq> |  cout  << <expr-seq>
-
-		void program(){
-			if(curr_token == if_keyword){
-				match(if_keyword);
-				//match(greater_than_sy);
-				expr_seq();
-			}
-			else if(curr_token == else_keyword){
-				match(else_keyword);
-				//match(less_than_sy);
-				expr_seq();
-			}
-			else if(curr_token == int_keyword){
-				match(int_keyword);
-				//match(less_than_sy);
-				expr_seq();
-			}
-			else if(curr_token == float_keyword){
-				match(float_keyword);
-				//match(less_than_sy);
-				expr_seq();
-			}
-			else if (curr_token == id)
-			{
-				match(id);
-				expr_seq();
-			}
-			
-			else
-				syntax_error(curr_token,line_no);
-		}
-
-		//<expr-seq>::= <expr> { <expr> }
-
-		void expr_seq(){
-			expr();
-			while(curr_token == id || curr_token == int_sy || curr_token == real_sy || curr_token == lparn_sy || curr_token == rparn_sy || curr_token == semi_colon_sy || curr_token == comma_sy || curr_token == less_than_sy || curr_token == greater_than_sy || curr_token ==equal_op_sy || curr_token==else_keyword|| curr_token ==float_keyword || curr_token==if_keyword || curr_token==rcurlybrace_sy || curr_token==lcurlybrace_sy || curr_token==subtract_sy || curr_token == plus_sy) {
-				expr();
-			}
-		}
-
-		//<expr>    ::= <id>|<int> | <real> |  ( + <expr-seq>) | ( * <expr-seq>)
-
-		void expr(){
-
-			switch(curr_token){
-
-				case id: match(id); break;
-				case int_sy : match(int_sy);break;
-				case real_sy : match(real_sy);break;
-				case semi_colon_sy : match(semi_colon_sy);break;
-				case comma_sy : match(comma_sy);break;
-				case equal_op_sy : match(equal_op_sy);break;
-				case float_keyword : match(float_keyword);break;
-				case if_keyword : match(if_keyword);break;
-				case else_keyword : match(else_keyword);break;
-
-				case greater_than_sy : match(greater_than_sy);break;
-				case less_than_sy : match(less_than_sy);break;
-				case rparn_sy : match(rparn_sy); break;
-				case lcurlybrace_sy : match(lcurlybrace_sy); break;
-				case rcurlybrace_sy : match(rcurlybrace_sy); break;
-				case subtract_sy : match(subtract_sy); break;
-				case plus_sy : match(plus_sy); break;
-
-
-
-
-
-				case lparn_sy:
-					match (lparn_sy);
-					if (curr_token == id){
-						match (id);
-						expr_seq();
-						//match(rparn_sy);
-					}
-					// else if (curr_token == greater_than_sy){
-					// 	match (greater_than_sy);
-					// 	expr_seq();
-					// 	//match(rparn_sy);
-					// }
-					else if (curr_token == real_sy){
-						match (real_sy);
-						expr_seq();
-						//match(rparn_sy);
-					}
-					else{
-						syntax_error(curr_token, line_no);
-					}
-					break;
-
-			}
-
-
-		}
-
-
+		symbolInfo(int s, string t) : scope(s), type(t) {}
+		symbolInfo(int s, string t, vector<string> a) : scope(s), type(t), arguments(a) {}
+		string getType() {return type;}
+		int getScope() {return scope;}
+		vector<string> getArguments() {return arguments;}
 };
 
+// The current scope of the file
+int fileScope = 0;
+// The current line number of the file
+int lineNo = 0;
+// The current function the checker is in
+string currentFunc;
+
+// The table (as a hash map) that holds all the data about the variables and functions, using their names as keys.
+unordered_map<string, symbolInfo*> symbolTable;
+// A set of keywords.
+unordered_set<string> keywords =
+{"int", "char", "double", "short", "long", "void", "class", "switch", "case", "bool", "float", "string", "return", "break", "if", "else", "while", "for", "true", "false"};
+// A set of operators mostly, with whitespace characters added to assist in scanning.
+unordered_set<char> operators = {'+', '-', '*', '/', '=', '<', '>', '!', '.', '(', ')', '{', '}', ';', '^', '%', ':', ' ', ',', '\n', '\t', '?', '[', ']', '&', '|'};
+// A set containing all the operators that are 2 characters.
+unordered_set<string> twoCharOps = {"&&", "||", "==", "<=", "!=", "+=", "-=", "*=", "/=", "->", "++", "--", "<<", ">>", "::"};
+// A set containing all of the data types.
+unordered_set<string> types = {"int", "char", "double", "float", "short", "long", "void", "bool", "string"};
+
+// Breaks an input file into a vector of tokens.
+// Preconditions: An empty string vector.
+// Postconditions: The passed vector is filled with the input's tokens.
+void breakTokens(vector<string>*);
+
+// Checks the tokens from the passed vector to determine if their are any type errors in the program.
+// Preconditions: The vector is filled with valid Csimple tokens.
+// Postconditions: None.
+void typeCheck(vector<string>);
+
+// Takes in an expression (composed of tokens) and determines the data type.
+// Returns a string representation of the data type, or "e" if the expression had a type error.
+// Preconditions: The vector is filled with valid Csimple tokens.
+// Postconditions: None.
+string parseExpression(vector<string>);
+
+// Determines the type of the passed token.
+// Returns a string representation of the data type.
+// Preconditions: None.
+// Postconditions: None.
+string tokenType(string*);
+
+// Finds the first token in the passed vector equal to the passed string.
+// Returns the index the token was found at, or -1 if the token was not found.
+// Preconditions: None
+// Postconditions: None
+int findFirst(vector<string>, string);
+
+// Determines if the passed function (composed of tokens) is a valid function call.
+// Returns true if it is a valid function call, false otherwise.
+// Preconditions: The vector is filled with valid Csimple tokens.
+// Postconditions: None.
+bool functionCheck(vector<string>);
+
+// Displays error information when an error is encountered.
+// Preconditions: None.
+// Postconditions: An error message appears in the console.
+void showError(int);
 
 int main()
 {
-    string name;
-    cout<<"Enter File Name:"; cin>>name;
-    parser p(name);
-    p.sample_parser();
-    p.~parser();
+	vector<string> tokens;
+	breakTokens(&tokens);
+	typeCheck(tokens);
+	return 0;
+}
+
+
+void breakTokens(vector<string>* tokenList)
+{
+	ifstream input("text.txt");
+	string word = "";
+	bool isString = false;
+	bool isChar = false;
+	bool isNumber = false;
+	char current;
+	char previous;
+	
+	while (!input.eof())
+	{
+		current = input.get(); //gets a single character and assigns it to current
+		if (operators.find(current) == operators.end() || isString || isChar || (isNumber && current == '.')) // current character is not an operator (building word)
+		{
+			word += current; //add character to word
+			if (current == '\"')
+			{
+				isString = !isString;
+			}
+			else if (current == '\'')
+			{
+				isChar = !isChar;
+			}
+			else if (current > 47 && current < 58) // current is a number (ascii range 48-57)
+			{
+				isNumber = true;
+			}
+		}
+		else // if the current char is an operator and the scanner is not currently building a string, char, or number
+		{
+			string op = string(1, current);
+			
+			if (word != "") // add the word that was being built up before the op was reached
+			{
+				tokenList->push_back(word);
+			}
+			
+			if (twoCharOps.find(previous + op) != twoCharOps.end()) //two opertayers adding to token list
+			{
+				tokenList->pop_back();
+				tokenList->push_back(previous + op);
+			}
+			else 
+			{
+				if (current != ' ' && current != '\t') // whitespace is not a token
+				{
+					tokenList->push_back(op);
+				}
+			}
+			//printf("%d",word);
+           
+			word = "";
+			isString = false;
+			isChar = false;
+			if (current != '.')
+			{
+				isNumber = false;
+			}
+		}
+		previous = current;
+	}
+	
+	input.close();
+}
+
+void typeCheck(vector<string> tokens)
+{
+	string lastValue;
+	for (int i = 0; i < tokens.size(); i++)
+	{
+		string current = tokens[i]; // define current to be the vector array obtained from breaking the tokens
+		
+		if (current == "{")
+		{
+			fileScope++;
+		}
+		else if (current == "}")
+		{
+			fileScope--;
+		}
+		else if (current == "\n")
+		{
+			lineNo++;
+		}
+		else if (types.find(current) != types.end()) // current token is a data type - line is a declaration
+		{ //declaration part start
+			string pointerAdd = "";
+			if (tokens[i + 1] == "*") // pointer
+			{
+				i++;
+				pointerAdd = "*";
+			}
+			string name = tokens[i + 1]; // will be of type int * or int for example + 1 is for the name of function
+			unordered_map<string, symbolInfo*>::iterator it = symbolTable.find(name);
+			string next = tokens[i + 2];
+			vector<string> arguments;
+			if (next == "(") // function declaration logic
+			{
+				if (current == "string")
+				{
+					showError(8);
+					return;
+				}
+				
+				if (name == "Main")
+				{
+					if (it != symbolTable.end() || fileScope != 0) // main already exists in symbol table or not currently in global scope
+					{
+						showError(1);
+						return;
+					}
+					else if (tokens[i + 2] == "(" && tokens[i + 3] != ")") //main cannot take arguments
+					{
+						showError(2);
+						return;
+					}
+				}
+				
+				currentFunc = name; //name of the function
+				if (it != symbolTable.end() && (it->second)->getScope() == fileScope) // duplicate function
+				{
+					showError(3);
+					return;
+				}
+				i += 2; // advancing to the arguments
+				int intoArgs = 0;
+				while (next != ")")
+				{
+					intoArgs++;
+					next = tokens[i + intoArgs];
+					if (types.find(next) != types.end())
+					{
+						arguments.push_back(next);
+					}
+				}
+				symbolInfo* info = new symbolInfo(fileScope, current, arguments);
+				pair<string, symbolInfo*> data(name, info);
+				symbolTable.insert(data);
+			}
+			else // identifier declaration logic
+			{
+				i++;
+				if (it != symbolTable.end() && (it->second)->getScope() == fileScope) // duplicate id
+				{
+					showError(4);
+					return;
+				}
+				symbolInfo* info = new symbolInfo(fileScope, pointerAdd + current); // adds id
+				pair<string, symbolInfo*> data(name, info);
+				symbolTable.insert(data);
+			}
+		} // end of data type checking / declaration part
+        //start of function call check
+		else if (tokens[i + 1] == "(" && operators.find(current[0]) == operators.end() && keywords.find(current) == keywords.end()) // function calls
+		{
+			if (symbolTable.find(current) != symbolTable.end())
+			{
+				vector<string> function;
+				function.push_back(current); // function name
+				while (current != ")")
+				{
+					i++;
+					current = tokens[i];
+					function.push_back(current);
+				}
+				bool valid = functionCheck(function);
+				if (!valid)
+				{
+					return;
+				}
+			}
+			else // function not in symbol table
+			{
+				showError(5);
+				return;
+			}
+		} // end of function checking
+
+        //start of indexing check
+		else if (current == "[") // checking if indexing is being applied to a string and if the argument is an integer
+		{
+			if (tokenType(&tokens[i - 1]) != "string")
+			{
+				showError(13);
+				return;
+			}
+			
+			vector<string> expression;
+			i++;
+			current = tokens[i];
+			while (current != "]")
+			{
+				expression.push_back(current);
+				i++;
+				current = tokens[i];
+			}
+			
+			string expressionType = parseExpression(expression);
+			if (expressionType == "e")
+			{
+				return;
+			}
+			else if (expressionType != "int")
+			{
+				showError(12);
+				return;
+			}
+		} //end of index checking
+
+       // assignment checking
+		else if (current == "=") // assignment
+		{
+			string lhsType = tokenType(&tokens[i - 1]); //define lhs type 
+			if (tokens[i + 2] == "(") // assigning a function to a value
+			{
+				if (symbolTable.find(tokens[i + 1]) == symbolTable.end()) // function not found
+				{
+					showError(5);
+					return;
+				}
+				if (tokenType(&tokens[i + 1]) != lhsType) // mismatched types
+				{
+					showError(9);
+					return;
+				}
+			}
+			else // assigning an expression
+			{
+				vector<string> expression;
+				i++;
+				current = tokens[i];
+				while (current != ";")
+				{
+					expression.push_back(current);
+					i++;
+					current = tokens[i];
+				}
+				string rhsType = parseExpression(expression);
+				
+				if (rhsType == "e")
+				{
+					return;
+				}
+				else if (rhsType != lhsType
+				&& !(rhsType == "*null" && (lhsType == "*int" || lhsType == "*char"))) // allows null pointer to be assigned to int/char pointer
+				{
+					showError(14);
+					return;
+				}
+			}
+		}
+		else if (current == "return")
+		{	
+			vector<string> expression;
+			i++;
+			string next = tokens[i];
+			while (next != ";")
+			{
+				expression.push_back(next);
+				i++;
+				next = tokens[i];
+			}
+			string returnType = parseExpression(expression);
+			
+			unordered_map<string, symbolInfo*>::iterator it = symbolTable.find(currentFunc);
+			
+			if (returnType == "e")
+			{
+				return;
+			}
+			else if ((it->second)->getType() != returnType)
+			{
+				showError(8);
+				return;
+			}
+		}
+		else if (current == "if" || current == "while")
+		{
+			vector<string> expression;
+			i += 2;
+			string next = tokens[i];
+			while (next != ")")
+			{
+				expression.push_back(next);
+				i++;
+				next = tokens[i];
+			}
+			string loopCondition = parseExpression(expression);
+			
+			if (loopCondition == "e")
+			{
+				return;
+			}
+			else if (loopCondition != "bool")
+			{
+				if (current == "if")
+				{
+					showError(10);
+				}
+				else
+				{
+					showError(11);
+				}
+				return;
+			}
+		}
+	}
+
+    //print the vecotr stirng
+    
+	for(int i = 0; i < tokens.size(); i++)
+	{
+		std::cout << tokens[i] ;
+		cout<< std::endl;
+        
+        //***** alternate method *******
+		//std::cout << myVector.at(i) << std::endl;		
+	}	
+	cout << "No type checking errors found.";
+}
+
+string parseExpression(vector<string> expression)
+{
+	// This function goes through all the expression operators (and parentheses) in
+	// their appropriate evaluation order. It resolves each operator by removing all
+	// tokens used by the operator, then replaces the operator with a literal
+	// value of the operator's output type.
+	// ex. The sequence 4, <, 2 will have 4 and 2 removed, then < replaced with true.
+	// For literal pointers, * is attached to the appropriate literal value to denote it. 
+	int foundLoc = findFirst(expression, "(");
+	while (foundLoc != -1)
+	{
+		vector<string> subExpr;
+		string current = expression[foundLoc + 1];
+		while (current != ")")
+		{
+			subExpr.push_back(current);
+			expression.erase(expression.begin() + foundLoc + 1);
+			current = expression[foundLoc + 1];
+		}
+		
+		string subExprType = parseExpression(subExpr);
+		if (subExprType == "e")
+		{
+			return "e";
+		}
+		
+		string pointerAdd;
+		string dummyValue;
+		if (subExprType[0] == '*')
+		{
+			pointerAdd = "*";
+			subExprType = subExprType.substr(1, subExprType.size());
+		}
+		
+		if (subExprType == "char")
+		{
+			dummyValue = "\'";
+		}
+		else if (subExprType == "int")
+		{
+			dummyValue = "0";
+		}
+		else if (subExprType == "string")
+		{
+			dummyValue = "\"";
+		}
+		else if (subExprType == "bool")
+		{
+			dummyValue = "true";
+		}
+		expression[foundLoc] = pointerAdd + dummyValue;
+		expression.erase(expression.begin() + foundLoc + 1); // erasing ")"
+		
+		foundLoc = findFirst(expression, "(");
+	}
+	
+	foundLoc = findFirst(expression, "[");
+	while (foundLoc != -1)
+	{
+		if (tokenType(&expression[foundLoc - 1]) != "string")
+		{
+			showError(13);
+			return "e";
+		}
+		
+		vector<string> subExpr;
+		string current = expression[foundLoc + 1];
+		while (current != "]")
+		{
+			subExpr.push_back(current);
+			expression.erase(expression.begin() + foundLoc + 1);
+			current = expression[foundLoc + 1];
+		}
+		
+		string expressionType = parseExpression(subExpr);
+		if (expressionType == "e")
+		{
+			return "e";
+		}
+		else if (expressionType != "int")
+		{
+			showError(12);
+			return "e";
+		}
+		
+		expression[foundLoc] = "\'";
+		expression.erase(expression.begin() + foundLoc + 1); // erasing "]"
+		expression.erase(expression.begin() + foundLoc - 1); // erasing string id
+		
+		foundLoc = findFirst(expression, "[");
+	}
+	
+	foundLoc = findFirst(expression, "|");
+	while (foundLoc != -1)
+	{
+		vector<string> subExpr;
+		string current = expression[foundLoc + 1];
+		while (current != "|")
+		{
+			subExpr.push_back(current);
+			expression.erase(expression.begin() + foundLoc + 1);
+			current = expression[foundLoc + 1];
+		}
+		
+		string subExprType = parseExpression(subExpr);
+		if (subExprType == "e")
+		{
+			return "e";
+		}
+		else if (subExprType != "int")
+		{
+			showError(15);
+			return "e";
+		}
+		expression[foundLoc] = "0";
+		expression.erase(expression.begin() + foundLoc + 1); // erasing closing "|"
+		
+		foundLoc = findFirst(expression, "|");
+	}
+	
+	foundLoc = findFirst(expression, "&");
+	while (foundLoc != -1)
+	{
+		if (tokenType(&expression[foundLoc + 1]) == "int")
+		{
+			expression[foundLoc] = "*0";
+			expression.erase(expression.begin() + foundLoc + 1);
+		}
+		else if (tokenType(&expression[foundLoc + 1]) == "char") // indexed strings just evaluate to char
+		{
+			expression[foundLoc] = "*\'";
+			expression.erase(expression.begin() + foundLoc + 1);
+		}
+		else
+		{
+			showError(17);
+			return "e";
+		}
+		
+		foundLoc = findFirst(expression, "&");
+	}
+	
+	foundLoc = findFirst(expression, "^");
+	while (foundLoc != -1)
+	{
+		if (tokenType(&expression[foundLoc + 1]) == "*int")
+		{
+			expression[foundLoc] = "0";
+			expression.erase(expression.begin() + foundLoc + 1);
+		}
+		else if (tokenType(&expression[foundLoc + 1]) == "*char")
+		{
+			expression[foundLoc] = "\'";
+			expression.erase(expression.begin() + foundLoc + 1);
+		}
+		else
+		{
+			showError(18);
+			return "e";
+		}
+		
+		foundLoc = findFirst(expression, "^");
+	}
+	
+	foundLoc = findFirst(expression, "!");
+	while (foundLoc != -1)
+	{
+		if (tokenType(&expression[foundLoc + 1]) == "bool")
+		{
+			expression[foundLoc] = "true";
+			expression.erase(expression.begin() + foundLoc + 1);
+		}
+		else
+		{
+			showError(15);
+			return "e";
+		}
+		
+		foundLoc = findFirst(expression, "!");
+	}
+	
+	foundLoc = findFirst(expression, "*");
+	while (foundLoc != -1)
+	{
+		string leftToken = tokenType(&expression[foundLoc - 1]);
+		string rightToken = tokenType(&expression[foundLoc + 1]);
+		if (leftToken == "int" && rightToken == "int")
+		{
+			expression[foundLoc] = "0";
+			expression.erase(expression.begin() + foundLoc + 1);
+			expression.erase(expression.begin() + foundLoc - 1);
+		}
+		else if (leftToken[0] == '*' || rightToken[0] == '*')
+		{
+			showError(16);
+			return "e";
+		}
+		else
+		{
+			showError(15);
+			return "e";
+		}
+		
+		foundLoc = findFirst(expression, "*");
+	}
+	
+	foundLoc = findFirst(expression, "/");
+	while (foundLoc != -1)
+	{
+		string leftToken = tokenType(&expression[foundLoc - 1]);
+		string rightToken = tokenType(&expression[foundLoc + 1]);
+		if (leftToken == "int" && rightToken == "int")
+		{
+			expression[foundLoc] = "0";
+			expression.erase(expression.begin() + foundLoc + 1);
+			expression.erase(expression.begin() + foundLoc - 1);
+		}
+		else if (leftToken[0] == '*' || rightToken[0] == '*')
+		{
+			showError(16);
+			return "e";
+		}
+		else
+		{
+			showError(15);
+			return "e";
+		}
+		
+		foundLoc = findFirst(expression, "/");
+	}
+	
+	foundLoc = findFirst(expression, "+");
+	while (foundLoc != -1)
+	{
+		string leftToken = tokenType(&expression[foundLoc - 1]);
+		string rightToken = tokenType(&expression[foundLoc + 1]);
+		if (leftToken == "int" && rightToken == "int")
+		{
+			expression[foundLoc] = "0";
+			expression.erase(expression.begin() + foundLoc + 1);
+			expression.erase(expression.begin() + foundLoc - 1);
+		}
+		else if ((leftToken[0] == '*' && rightToken == "int")
+		|| (leftToken == "int" && rightToken[0] == '*'))
+		{
+			string dummyValue;
+			string pointerType;
+			if (leftToken[0] == '*')
+			{
+				pointerType = leftToken.substr(1, leftToken.size());
+			}
+			else // right token is the pointer
+			{
+				pointerType = rightToken.substr(1, rightToken.size());
+			}
+			
+			if (pointerType == "char")
+			{
+				dummyValue = "\'";
+			}
+			else if (pointerType == "int")
+			{
+				dummyValue = "0";
+			}
+			else if (pointerType == "string")
+			{
+				dummyValue = "\"";
+			}
+			else if (pointerType == "bool")
+			{
+				dummyValue = "true";
+			}
+			expression[foundLoc] = "*" + dummyValue;
+			expression.erase(expression.begin() + foundLoc + 1);
+			expression.erase(expression.begin() + foundLoc - 1);
+		}
+		else
+		{
+			showError(15);
+			return "e";
+		}
+		
+		foundLoc = findFirst(expression, "+");
+	}
+	
+	foundLoc = findFirst(expression, "-");
+	while (foundLoc != -1)
+	{
+		string leftToken = tokenType(&expression[foundLoc - 1]);
+		string rightToken = tokenType(&expression[foundLoc + 1]);
+		if (leftToken == "int" && rightToken == "int")
+		{
+			expression[foundLoc] = "0";
+			expression.erase(expression.begin() + foundLoc + 1);
+			expression.erase(expression.begin() + foundLoc - 1);
+		}
+		else if (leftToken[0] == '*' && rightToken == "int")
+		{
+			string dummyValue;
+			string pointerType = leftToken.substr(1, leftToken.size());
+			
+			if (pointerType == "char")
+			{
+				dummyValue = "\'";
+			}
+			else if (pointerType == "int")
+			{
+				dummyValue = "0";
+			}
+			else if (pointerType == "string")
+			{
+				dummyValue = "\"";
+			}
+			else if (pointerType == "bool")
+			{
+				dummyValue = "true";
+			}
+			expression[foundLoc] = "*" + dummyValue;
+			expression.erase(expression.begin() + foundLoc + 1);
+			expression.erase(expression.begin() + foundLoc - 1);
+		}
+		else
+		{
+			showError(15);
+			return "e";
+		}
+		
+		foundLoc = findFirst(expression, "-");
+	}
+	
+	foundLoc = findFirst(expression, "<");
+	while (foundLoc != -1)
+	{
+		if (tokenType(&expression[foundLoc - 1]) == "int" && tokenType(&expression[foundLoc + 1]) == "int")
+		{
+			expression[foundLoc] = "true";
+			expression.erase(expression.begin() + foundLoc + 1);
+			expression.erase(expression.begin() + foundLoc - 1);
+		}
+		else
+		{
+			showError(15);
+			return "e";
+		}
+		
+		foundLoc = findFirst(expression, "<");
+	}
+	
+	foundLoc = findFirst(expression, ">");
+	while (foundLoc != -1)
+	{
+		if (tokenType(&expression[foundLoc - 1]) == "int" && tokenType(&expression[foundLoc + 1]) == "int")
+		{
+			expression[foundLoc] = "true";
+			expression.erase(expression.begin() + foundLoc + 1);
+			expression.erase(expression.begin() + foundLoc - 1);
+		}
+		else
+		{
+			showError(15);
+			return "e";
+		}
+		
+		foundLoc = findFirst(expression, ">");
+	}
+	
+	foundLoc = findFirst(expression, "<=");
+	while (foundLoc != -1)
+	{
+		if (tokenType(&expression[foundLoc - 1]) == "int" && tokenType(&expression[foundLoc + 1]) == "int")
+		{
+			expression[foundLoc] = "true";
+			expression.erase(expression.begin() + foundLoc + 1);
+			expression.erase(expression.begin() + foundLoc - 1);
+		}
+		else
+		{
+			showError(15);
+			return "e";
+		}
+		
+		foundLoc = findFirst(expression, "<=");
+	}
+	
+	foundLoc = findFirst(expression, ">=");
+	while (foundLoc != -1)
+	{
+		if (tokenType(&expression[foundLoc - 1]) == "int" && tokenType(&expression[foundLoc + 1]) == "int")
+		{
+			expression[foundLoc] = "true";
+			expression.erase(expression.begin() + foundLoc + 1);
+			expression.erase(expression.begin() + foundLoc - 1);
+		}
+		else
+		{
+			showError(15);
+			return "e";
+		}
+		
+		foundLoc = findFirst(expression, ">=");
+	}
+	
+	foundLoc = findFirst(expression, "==");
+	while (foundLoc != -1)
+	{
+		string leftToken = tokenType(&expression[foundLoc - 1]);
+		string rightToken = tokenType(&expression[foundLoc + 1]);
+		if ((leftToken == "int" && rightToken == "int")
+		|| (leftToken == "char" && rightToken == "char")
+		|| (leftToken == "bool" && rightToken == "bool")
+		|| ((leftToken == "*int" || leftToken == "*null") && (rightToken == "*int" || rightToken == "*null"))
+		|| ((leftToken == "*char" || leftToken == "*null") && (rightToken == "*char" || rightToken == "*null")))
+		{
+			expression[foundLoc] = "true";
+			expression.erase(expression.begin() + foundLoc + 1);
+			expression.erase(expression.begin() + foundLoc - 1);
+		}
+		else
+		{
+			showError(15);
+			return "e";
+		}
+		
+		foundLoc = findFirst(expression, "==");
+	}
+	
+	foundLoc = findFirst(expression, "!=");
+	while (foundLoc != -1)
+	{
+		string leftToken = tokenType(&expression[foundLoc - 1]);
+		string rightToken = tokenType(&expression[foundLoc + 1]);
+		if ((leftToken == "int" && rightToken == "int")
+		|| (leftToken == "char" && rightToken == "char")
+		|| (leftToken == "bool" && rightToken == "bool")
+		|| ((leftToken == "*int" || leftToken == "*null") && (rightToken == "*int" || rightToken == "*null"))
+		|| ((leftToken == "*char" || leftToken == "*null") && (rightToken == "*char" || rightToken == "*null")))
+		{
+			expression[foundLoc] = "true";
+			expression.erase(expression.begin() + foundLoc + 1);
+			expression.erase(expression.begin() + foundLoc - 1);
+		}
+		else
+		{
+			showError(15);
+			return "e";
+		}
+		
+		foundLoc = findFirst(expression, "!=");
+	}
+	
+	foundLoc = findFirst(expression, "&&");
+	while (foundLoc != -1)
+	{
+		if (tokenType(&expression[foundLoc - 1]) == "bool" && tokenType(&expression[foundLoc + 1]) == "bool")
+		{
+			expression[foundLoc] = "true";
+			expression.erase(expression.begin() + foundLoc + 1);
+			expression.erase(expression.begin() + foundLoc - 1);
+		}
+		else
+		{
+			showError(15);
+			return "e";
+		}
+		
+		foundLoc = findFirst(expression, "&&");
+	}
+	
+	foundLoc = findFirst(expression, "||");
+	while (foundLoc != -1)
+	{
+		if (tokenType(&expression[foundLoc - 1]) == "bool" && tokenType(&expression[foundLoc + 1]) == "bool")
+		{
+			expression[foundLoc] = "true";
+			expression.erase(expression.begin() + foundLoc + 1);
+			expression.erase(expression.begin() + foundLoc - 1);
+		}
+		else
+		{
+			showError(15);
+			return "e";
+		}
+		
+		foundLoc = findFirst(expression, "||");
+	}
+	return tokenType(&expression[0]);
+}
+
+string tokenType(string* token)
+{
+	unordered_map<string, symbolInfo*>::iterator it = symbolTable.find(*token);
+	char first = (*token)[0];
+	string pointerAdd = "";
+	if (first == '*') // pointer "literal" signifier, can't exist in the input file but is used in the expression parser as a dummy value
+	{
+		pointerAdd = "*";
+		*token = token->substr(1, token->size());
+		first = (*token)[0];
+	}
+	
+	if (it != symbolTable.end()) // if in symbol table
+	{
+		return (it->second)->getType();
+	}
+	else if (token->find("\"") != string::npos) // if not in symbol table, must be a literal to be valid
+	{
+		return pointerAdd + "string";
+	}
+	else if (token->find("\'") != string::npos || *token == "]")
+	{
+		return pointerAdd + "char";
+	}
+	else if (first > 47 && first < 58)
+	{
+		if (token->find(".") != string::npos)
+		{
+			return pointerAdd + "double";
+		}
+		else
+		{
+			return pointerAdd + "int";
+		}
+	}
+	else if (*token == "true" || *token == "false")
+	{
+		return pointerAdd + "bool";
+	}
+	else
+	{
+		if (pointerAdd == "*")
+		{
+			return "*null"; // null pointer
+		}
+		return "void";
+	}
+}
+
+int findFirst(vector<string> vect, string search)
+{
+	for (int i = 0; i < vect.size(); i++)
+	{
+		if (vect[i] == search)
+		{
+			return i;
+		}
+	}
+	return -1; // search not found
+}
+
+bool functionCheck(vector<string> function)
+{
+	unordered_map<string, symbolInfo*>::iterator it = symbolTable.find(function[0]);
+	if (it != symbolTable.end() && (it->second)->getScope() <= fileScope)
+	{
+		vector<string> arguments;
+		string next = function[2]; // start past the first ( of the function call
+		int i = 0;
+		while (next != ")")
+		{
+			if (next != ",")
+			{
+				arguments.push_back(tokenType(&next));
+			}
+			i++;
+			next = function[2 + i];
+		}
+		
+		vector<string> storedArguments = (it->second)->getArguments();
+		if (arguments.size() != storedArguments.size())
+		{
+			showError(6);
+			return false;
+		}
+		for (i = 0; i < arguments.size(); i++)
+		{
+			if (arguments[i] != storedArguments[i])
+			{
+				showError(7);
+				return false;
+			}
+		}
+	}
+	else // function does not exist in the current scope
+	{
+		showError(5);
+		return false;
+	}
+	return true;
+}
+
+void showError(int code)
+{
+	cout << "Error " << code << " on line " << lineNo << " : ";
+	switch(code)
+	{
+		case 1:
+			cout << "Multiple Main cannot exist." << endl;
+			break;
+		case 2:
+			cout << "Main cannot have arguments." << endl;
+			break;
+		case 3:
+			cout << "Procedure appears multiple times." << endl;
+			break;
+		case 4:
+			cout << "Variable appears multiple times." << endl;
+			break;
+		case 5:
+			cout << "This procedure does not exist in the current scope." << endl;
+			break;
+		case 6:
+			cout << "The number of arguments passed is incorrect." << endl;
+			break;
+		case 7:
+			cout << "The type of the arguments passed are incorrect." << endl;
+			break;
+		case 8:
+			cout << "Invalid return type." << endl;
+			break;
+		case 9:
+			cout << "This procedure does not return the same data type as what it is being assigned to." << endl;
+			break;
+		case 10:
+			cout << "if statement arguments must be of type bool." << endl;
+			break;
+		case 11:
+			cout << "while statement arguments must be of type bool." << endl;
+			break;
+		case 12:
+			cout << "Cannot use a non-integer value to index a String." << endl;
+			break;
+		case 13:
+			cout << "Non-String variables cannot be indexed." << endl;
+			break;
+		case 14:
+			cout << "Invalid assignment due to mismatched data types." << endl;
+			break;
+		case 15:
+			cout << "Undeclared or Incorrect use of operands." << endl;
+			break;
+		case 16:
+			cout << "Can only add and subtract to pointers." << endl;
+			break;
+		case 17:
+			cout << "Cannot use addressOf on non-integer/char/string-index values." << endl;
+			break;
+		case 18:
+			cout << "Cannot use deref on non-integer-pointer/char-pointer values." << endl;
+			break;
+		default:
+			cout << "Undefined error." << endl;
+			break;
+	}
+	cout << "Type check failed.";
 }
