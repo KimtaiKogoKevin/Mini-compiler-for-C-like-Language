@@ -414,16 +414,29 @@ void typeCheck(vector<string> tokens)
 	}
 
 	//print the vecotr stirng
+	fstream outp;
+		outp.open("inputTAC.txt",fstream::out);
+		if (!outp)
+		{
+			cout << " \n Omera bwana kuna shida";
+			//return 0;
+		}
 
 	for (int i = 0; i < tokens.size(); i++)
 	{
 		std::cout << tokens[i];
 		cout << std::endl;
 
+		outp<<tokens[i];
+		outp<<"\n";
+
+		
+
 		//***** alternate method *******
 		//std::cout << myVector.at(i) << std::endl;
 	}
-	cout << "No type checking errors found.";
+	cout << "PARSE SUCCESSFUL.";
+	outp.close();
 }
 
 string parseExpression(vector<string> expression)

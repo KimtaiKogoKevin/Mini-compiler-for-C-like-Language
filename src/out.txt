@@ -1,0 +1,36 @@
+int 
+amvar1 
+; 
+int 
+bevar2 
+; 
+if 
+( 
+amvar1 
+< 
+5 
+) 
+{ 
+bevar2 
+= 
+amvar1 
++ 
+2 
+; 
+} 
+else 
+{ 
+bevar2 
+= 
+amvar1 
+- 
+2 
+; 
+} 
+t1=amvar1 
+ t2=bevar2 
+ t3=amvar1<5 
+ if( ! t3 ) GOTO L1  
+t5=amvar1+2 
+ L1:  
+ t10=amvar1-2 

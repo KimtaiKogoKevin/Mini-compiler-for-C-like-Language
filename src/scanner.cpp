@@ -4,136 +4,136 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
-#include "symtb.hpp"
+//#include "symtb.hpp"
 
-SymbolTable st;
-string check;
+// SymbolTable st;
+// string check;
 
 
-// Function to modify an identifier
-bool SymbolTable::modify(string id, string s,
-                         string t, int l)
-{
-    int index = hashf(id);
-    Node* start = head[index];
+// // Function to modify an identifier
+// bool SymbolTable::modify(string id, string s,
+//                          string t, int l)
+// {
+//     int index = hashf(id);
+//     Node* start = head[index];
   
-    if (start == NULL)
-        return "-1";
+//     if (start == NULL)
+//         return "-1";
   
-    while (start != NULL) {
-        if (start->identifier == id) {
-            start->scope = s;
-            start->type = t;
-            start->lineNo = l;
-            return true;
-        }
-        start = start->next;
-    }
+//     while (start != NULL) {
+//         if (start->identifier == id) {
+//             start->scope = s;
+//             start->type = t;
+//             start->lineNo = l;
+//             return true;
+//         }
+//         start = start->next;
+//     }
   
-    return false; // id not found
-}
+//     return false; // id not found
+// }
 
  
-// Function to delete an identifier
-bool SymbolTable::deleteRecord(string id)
-{
-    int index = hashf(id);
-    Node* tmp = head[index];
-    Node* par = head[index];
+// // Function to delete an identifier
+// bool SymbolTable::deleteRecord(string id)
+// {
+//     int index = hashf(id);
+//     Node* tmp = head[index];
+//     Node* par = head[index];
   
-    // no identifier is present at that index
-    if (tmp == NULL) {
-        return false;
-    }
-    // only one identifier is present
-    if (tmp->identifier == id && tmp->next == NULL) {
-        tmp->next = NULL;
-        delete tmp;
-        return true;
-    }
+//     // no identifier is present at that index
+//     if (tmp == NULL) {
+//         return false;
+//     }
+//     // only one identifier is present
+//     if (tmp->identifier == id && tmp->next == NULL) {
+//         tmp->next = NULL;
+//         delete tmp;
+//         return true;
+//     }
   
-    while (tmp->identifier != id && tmp->next != NULL) {
-        par = tmp;
-        tmp = tmp->next;
-    }
-    if (tmp->identifier == id && tmp->next != NULL) {
-        par->next = tmp->next;
-        tmp->next = NULL;
-        delete tmp;
-        return true;
-    }
+//     while (tmp->identifier != id && tmp->next != NULL) {
+//         par = tmp;
+//         tmp = tmp->next;
+//     }
+//     if (tmp->identifier == id && tmp->next != NULL) {
+//         par->next = tmp->next;
+//         tmp->next = NULL;
+//         delete tmp;
+//         return true;
+//     }
 	
   
-    // delete at the end
-    else {
-        par->next = NULL;
-        tmp->next = NULL;
-        delete tmp;
-        return true;
-    }
-    return false;
-}
-// Function to find an identifier
-string SymbolTable::find(string id)
-{
-    int index = hashf(id);
-    Node* start = head[index];
+//     // delete at the end
+//     else {
+//         par->next = NULL;
+//         tmp->next = NULL;
+//         delete tmp;
+//         return true;
+//     }
+//     return false;
+// }
+// // Function to find an identifier
+// string SymbolTable::find(string id)
+// {
+//     int index = hashf(id);
+//     Node* start = head[index];
   
-    if (start == NULL)
-        return "-1";
+//     if (start == NULL)
+//         return "-1";
   
-    while (start != NULL) {
+//     while (start != NULL) {
   
-        if (start->identifier == id) {
-            start->print();
-            return start->scope;
-        }
+//         if (start->identifier == id) {
+//             start->print();
+//             return start->scope;
+//         }
   
-        start = start->next;
-    }
+//         start = start->next;
+//     }
   
-    return "-1"; // not found
-}
+//     return "-1"; // not found
+// }
   
-// Function to insert an identifier
-bool SymbolTable::insert(string id, string scope,
-                         string Type, int lineno)
-{
-    int index = hashf(id);
-    Node* p = new Node(id, scope, Type, lineno);
+// // Function to insert an identifier
+// bool SymbolTable::insert(string id, string scope,
+//                          string Type, int lineno)
+// {
+//     int index = hashf(id);
+//     Node* p = new Node(id, scope, Type, lineno);
   
-    if (head[index] == NULL) {
-        head[index] = p;
-        cout << "\n"
-             << id << " inserted" << endl ;
+//     if (head[index] == NULL) {
+//         head[index] = p;
+//         cout << "\n"
+//              << id << " inserted" << endl ;
   
-        return true;
-    }
+//         return true;
+//     }
   
-    else {
-        Node* start = head[index];
-        while (start->next != NULL)
-            start = start->next;
+//     else {
+//         Node* start = head[index];
+//         while (start->next != NULL)
+//             start = start->next;
   
-        start->next = p;
-        cout << "\n"
-             << id << " inserted" << endl;
+//         start->next = p;
+//         cout << "\n"
+//              << id << " inserted" << endl;
   
-        return true;
-    }
+//         return true;
+//     }
   
-    return false;
-}
-int SymbolTable::hashf(string id)
-{
-    int asciiSum = 0;
+//     return false;
+// }
+// int SymbolTable::hashf(string id)
+// {
+//     int asciiSum = 0;
   
-    for (int i = 0; i < id.length(); i++) {
-        asciiSum = asciiSum + id[i];
-    }
+//     for (int i = 0; i < id.length(); i++) {
+//         asciiSum = asciiSum + id[i];
+//     }
   
-    return (asciiSum % 100);
-}
+//     return (asciiSum % 100);
+// }
 
 /// Returns 'true' if the character : DELIMITER.
 bool isDelimiter(char ch)
@@ -268,14 +268,14 @@ void scan(char *str) //str pointer parameter stores address of character array
 			else if (isDelimiter(str[right]) == true)
 			{
 				printf("'%c' : Delimiter \n \n", str[right]);
-				if (st.insert(str, "local", "delimiter", 4))
-				{
-					// printf("inserted to symbol table \n");
-				}
-				else
-				{
-					printf("we have an error boss");
-				}
+				// if (st.insert(str, "local", "delimiter", 4))
+				// {
+				// 	// printf("inserted to symbol table \n");
+				// }
+				// else
+				// {
+				// 	printf("we have an error boss");
+				// }
 			}
 
 			right++;
@@ -289,40 +289,40 @@ void scan(char *str) //str pointer parameter stores address of character array
 			if (isKeyword(subStr) == true)
 			{
 				printf("'%s' : keyword\n \n", subStr);
-				if (st.insert(subStr, "local", "keyword", 4))
-				{
-					// printf("inserted to symbol table \n");
-				}
-				else
-				{
-					printf("we have an error ");
-				}
+				// if (st.insert(subStr, "local", "keyword", 4))
+				// {
+				// 	// printf("inserted to symbol table \n");
+				// }
+				// else
+				// {
+				// 	printf("we have an error ");
+				// }
 			}
 
 			else if (isInteger(subStr) == true)
 			{
 				
 				printf("'%s' : integer\n \n", subStr);
-				if (st.insert(subStr, "local", "number", 4))
-				{
-					// printf("inserted to symbol table \n");
-				}
-				else
-				{
-					printf("we have an error boss");
-				}
+				// if (st.insert(subStr, "local", "number", 4))
+				// {
+				// 	// printf("inserted to symbol table \n");
+				// }
+				// else
+				// {
+				// 	printf("we have an error boss");
+				// }
 			}
 			else if (isDecimal(subStr) == true)
 			{
 				printf("'%s' : floating point no \n \n", subStr);
-				if (st.insert(subStr, "local", "decimalno \n", 4))
-				{
-					printf("inserted to symbol table");
-				}
-				else
-				{
-					printf("we have an error boss");
-				}
+				// if (st.insert(subStr, "local", "decimalno \n", 4))
+				// {
+				// 	printf("inserted to symbol table");
+				// }
+				// else
+				// {
+				// 	printf(" error ");
+				// }
 			}
 			else if (validIdentifier(subStr) == true && isDelimiter(str[right - 1]) == false)
 			{    
@@ -334,14 +334,14 @@ void scan(char *str) //str pointer parameter stores address of character array
 				
 
 				
-				if (st.insert(subStr, "local", "identifier", 9))
-				{
-					// printf("inserted to symbol table \n");
-				}
-				else
-				{
-					printf("we have an error boss");
-				}
+				// if (st.insert(subStr, "local", "identifier", 9))
+				// {
+				// 	// printf("inserted to symbol table \n");
+				// }
+				// else
+				// {
+				// 	printf(" an error ");
+				// }
 			}
 			else if (validIdentifier(subStr) == false && isDelimiter(str[right - 1]) == false)
 				printf("'%s' : Not accepted by small c \n \n", subStr);
@@ -367,11 +367,11 @@ int main()
 	fclose(ptr_file);
 
 	//find and print 'number'
-    check = st.find("k");
-    if (check != "-1")
-        cout << "Identifier Is present\n";
-    else
-        cout << "\nIdentifier Not Present";
+    //check = st.find("k");
+    // if (check != "-1")
+    //     cout << "Identifier Is present\n";
+    // else
+    //     cout << "\nIdentifier Not Present";
   
 
 	return 0;
