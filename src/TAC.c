@@ -19,7 +19,7 @@ int main()
     while (fscanf(f1, "%s", s[len].data) != EOF) //%s reads up to white space and stores the string read in s struct data
     {
 
-        // fprintf(f2, "%s \n", s[len].data);
+      //  fprintf(f2, "%s \n", s[len].data);
 
         ++len;
 
@@ -47,6 +47,11 @@ int main()
         fprintf(f2, "%s=%s \n ", s[j].temp, s[i + 1].data);
         j++;
     }
+     if (strcmp(s[0].data, "float") == 0)
+        {
+            fprintf(f2, "%s=%s \n ", s[j].temp, s[i + 1].data);
+            j++;
+        }
 
     for (i = 2; i < len; ++i)
     {
@@ -68,16 +73,19 @@ int main()
         {
             fprintf(f2, "%s=%s<%s \n ", s[j].temp, s[i - 1].data, s[i + 1].data);
             j++;
+            
+
+
         }
-        else if (strcmp(s[i].data, " ") == 0)
+        else if (strcmp(s[i].data, ")") == 0)
         {
             fprintf(f2, "  %s = NOT %s \n", s[j].temp, s[j - 1].temp);
             j++;
         }
-        else if (strcmp(s[i].data, ")") == 0)
+        else if (strcmp(s[i].data, "1") == 0)
         {
-            fprintf(f2, "if( ! %s ) GOTO L1  \n", s[j - 1].temp);
-            j++;
+            fprintf(f2, "if( %s ) GOTO L1  \n", s[j - 1].temp);
+            //j++;
         }
         else if (strcmp(s[i].data, "+") == 0)
         {
@@ -88,7 +96,7 @@ int main()
         {
             fprintf(f2, " L1:  \n", s[j - 1].temp);
 
-            j++;
+            //j++;
         }
 
         else if (strcmp(s[i].data, "-") == 0)
@@ -103,9 +111,11 @@ int main()
         strcpy(d2, "t");
         // j++;
     }
-
+    printf("THREE ADREESS OUTPUT GENERATED IN FILE: OUT.TXT");
+       
     // fprintf(f2, "\n%s=%s", s[0].data, s[j - 1].temp);
     fclose(f1);
     fclose(f2);
     getch();
+
 }

@@ -5,6 +5,7 @@
 #include <unordered_set>
 #include <vector>
 #include <string>
+#include "scanner.h"
 using namespace std;
 
 // A class that holds all necessary information about variables and functions from the input file.
@@ -81,6 +82,21 @@ void showError(int);
 
 int main()
 {
+
+	FILE *ptr_file;
+	char buf[1000];
+
+	ptr_file = fopen("text.txt", "r");
+	if (!ptr_file)
+		return 1;
+
+	while (fgets(buf, 1000, ptr_file) != NULL)
+		scan(buf);
+	fclose(ptr_file);
+
+    printf("############################################################################################## \n SOURCE CODE SCANNED \n");
+
+
 	vector<string> tokens; // array to store tokens
 	breakTokens(&tokens);  //break input to tokens
 	typeCheck(tokens);	   //check the tokens
@@ -344,16 +360,14 @@ void typeCheck(vector<string> tokens)
 				}
 			}
 		}
-		
+
 		// else if(tokenType(&tokens[i-2])!="int" && tokenType(&tokens[i]) == ";"  ){
 
 		// 	std::cout << tokens[i-2];
 		//     cout << std::endl;
 
-			
 		// 		showError(19);
 		// 		return;
-		
 
 		// }
 		else if (current == "return")
@@ -415,22 +429,32 @@ void typeCheck(vector<string> tokens)
 
 	//print the vecotr stirng
 	fstream outp;
-		outp.open("inputTAC.txt",fstream::out);
-		if (!outp)
-		{
-			cout << " \n Omera bwana kuna shida";
-			//return 0;
-		}
+	outp.open("inputTAC.txt", fstream::out);
+	if (!outp)
+	{
+		cout << " \n Omera bwana kuna shida";
+		//return 0;
+	}
+
+		cout << "_____________________________START OF PARSER_________________________________________________________ \n ";
+	  
 
 	for (int i = 0; i < tokens.size(); i++)
 	{
+		//printing parsed tokens on command line
 		std::cout << tokens[i];
 		cout << std::endl;
-
-		outp<<tokens[i];
-		outp<<"\n";
-
-		
+		//printing the tokens to the input file for three address codes
+		if (tokens[i] == ")")
+		{
+			outp  << tokens[i]<< " \n 1 ";
+			outp << "\n";
+		}
+		else
+		{
+			outp << tokens[i];
+			outp << "\n";
+		}
 
 		//***** alternate method *******
 		//std::cout << myVector.at(i) << std::endl;
