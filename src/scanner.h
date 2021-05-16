@@ -211,7 +211,7 @@ void scan(char *str) //str pointer parameter stores address of character array
 				// }
 			}
 			else if (validIdentifier(subStr) == false && isDelimiter(str[right - 1]) == false)
-				printf("'%s' : Not accepted by small c \n \n", subStr);
+				printf("'%s' : New line character \n \n", subStr);
 			left = right;
 		}
 	}

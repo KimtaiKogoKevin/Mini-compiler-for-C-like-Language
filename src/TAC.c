@@ -19,7 +19,7 @@ int main()
     while (fscanf(f1, "%s", s[len].data) != EOF) //%s reads up to white space and stores the string read in s struct data
     {
 
-      //  fprintf(f2, "%s \n", s[len].data);
+      // fprintf(f2, "%s \n", s[len].data);
 
         ++len;
 

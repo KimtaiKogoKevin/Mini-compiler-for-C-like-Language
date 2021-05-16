@@ -94,8 +94,7 @@ int main()
 		scan(buf);
 	fclose(ptr_file);
 
-    printf("############################################################################################## \n SOURCE CODE SCANNED \n");
-
+	printf("############################################################################################## \n SOURCE CODE SCANNED \n");
 
 	vector<string> tokens; // array to store tokens
 	breakTokens(&tokens);  //break input to tokens
@@ -185,6 +184,7 @@ void typeCheck(vector<string> tokens)
 		{
 			fileScope++;
 		}
+		
 		else if (current == "}")
 		{
 			fileScope--;
@@ -318,6 +318,7 @@ void typeCheck(vector<string> tokens)
 				return;
 			}
 		} //end of index checking
+		
 
 		// assignment checking
 		else if (current == "=") // assignment
@@ -330,7 +331,7 @@ void typeCheck(vector<string> tokens)
 					showError(5);
 					return;
 				}
-				if (tokenType(&tokens[i + 1]) != lhsType) // mismatched types
+				if (tokenType(&tokens[i + 1]) != lhsType ) // mismatched types
 				{
 					showError(9);
 					return;
@@ -339,25 +340,41 @@ void typeCheck(vector<string> tokens)
 			else // assigning an expression
 			{
 				vector<string> expression;
+				
+
 				i++;
 				current = tokens[i];
 				while (current != ";")
 				{
 					expression.push_back(current);
+					
 					i++;
 					current = tokens[i];
 				}
 				string rhsType = parseExpression(expression);
+				//cout<<lhsType<<endl;
+				//cout<<rhsType<<endl;
+				int length;
+				length = rhsType.size();
+				//cout<<length<<endl;
+				
 
 				if (rhsType == "e")
 				{
 					return;
 				}
-				else if (rhsType != lhsType && !(rhsType == "*null" && (lhsType == "*int" || lhsType == "*char"))) // allows null pointer to be assigned to int/char pointer
+
+				if (rhsType != lhsType && length > 3 ) // check for variables assignment
 				{
 					showError(14);
 					return;
 				}
+				// else if (rhsType != lhsType && !(rhsType == "*null" && (lhsType == "*int" || lhsType == "*char" || lhsType == "*float"))) // assignment check
+				// {
+					
+                //      showError(14);
+				// 	return;
+				// }
 			}
 		}
 
@@ -426,28 +443,33 @@ void typeCheck(vector<string> tokens)
 			}
 		}
 	}
-
+     
+	 if (fileScope!=0)
+	 {
+		 showError(19);
+		 return;
+	 }
+	 
 	//print the vecotr stirng
 	fstream outp;
 	outp.open("inputTAC.txt", fstream::out);
 	if (!outp)
 	{
-		cout << " \n Omera bwana kuna shida";
+		cout << " \n ERROR";
 		//return 0;
 	}
 
-		cout << "_____________________________START OF PARSER_________________________________________________________ \n ";
-	  
+	cout << "_____________________________START OF PARSER_________________________________________________________ \n ";
 
 	for (int i = 0; i < tokens.size(); i++)
 	{
 		//printing parsed tokens on command line
-		std::cout << tokens[i];
-		cout << std::endl;
+		//std::cout << tokens[i];
+		//cout << std::endl;
 		//printing the tokens to the input file for three address codes
 		if (tokens[i] == ")")
 		{
-			outp  << tokens[i]<< " \n 1 ";
+			outp << tokens[i] << " \n 1 ";
 			outp << "\n";
 		}
 		else
@@ -482,6 +504,8 @@ string parseExpression(vector<string> expression)
 			expression.erase(expression.begin() + foundLoc + 1);
 			current = expression[foundLoc + 1];
 		}
+		
+		
 
 		string subExprType = parseExpression(subExpr);
 		if (subExprType == "e")
@@ -505,6 +529,7 @@ string parseExpression(vector<string> expression)
 		{
 			dummyValue = "0";
 		}
+
 		else if (subExprType == "string")
 		{
 			dummyValue = "\"";
@@ -577,6 +602,7 @@ string parseExpression(vector<string> expression)
 			showError(15);
 			return "e";
 		}
+
 		expression[foundLoc] = "0";
 		expression.erase(expression.begin() + foundLoc + 1); // erasing closing "|"
 
@@ -699,12 +725,20 @@ string parseExpression(vector<string> expression)
 	{
 		string leftToken = tokenType(&expression[foundLoc - 1]);
 		string rightToken = tokenType(&expression[foundLoc + 1]);
-		if (leftToken == "int" && rightToken == "int")
+		if (leftToken == "int" && rightToken == "int" || leftToken == "float" && rightToken == "float" || leftToken == "float" && rightToken == "int" || leftToken == "int" && rightToken == "float")
 		{
 			expression[foundLoc] = "0";
 			expression.erase(expression.begin() + foundLoc + 1);
 			expression.erase(expression.begin() + foundLoc - 1);
 		}
+
+		// else if (leftToken == "float" && rightToken == "float" )
+		// {
+		// 	expression[foundLoc] = "0";
+		// 	expression.erase(expression.begin() + foundLoc + 1);
+		// 	expression.erase(expression.begin() + foundLoc - 1);
+		// }
+
 		else if ((leftToken[0] == '*' && rightToken == "int") || (leftToken == "int" && rightToken[0] == '*'))
 		{
 			string dummyValue;
@@ -726,6 +760,11 @@ string parseExpression(vector<string> expression)
 			{
 				dummyValue = "0";
 			}
+			else if (pointerType == "float")
+			{
+				dummyValue = "0";
+			}
+
 			else if (pointerType == "string")
 			{
 				dummyValue = "\"";
@@ -741,7 +780,8 @@ string parseExpression(vector<string> expression)
 		else
 		{
 			showError(15);
-			return "e";
+
+			return "error ";
 		}
 
 		foundLoc = findFirst(expression, "+");
@@ -752,7 +792,7 @@ string parseExpression(vector<string> expression)
 	{
 		string leftToken = tokenType(&expression[foundLoc - 1]);
 		string rightToken = tokenType(&expression[foundLoc + 1]);
-		if (leftToken == "int" && rightToken == "int")
+		if (leftToken == "int" && rightToken == "int" || leftToken == "float" && rightToken == "float" || leftToken == "float" && rightToken == "int" || leftToken == "int" && rightToken == "float")
 		{
 			expression[foundLoc] = "0";
 			expression.erase(expression.begin() + foundLoc + 1);
@@ -771,6 +811,7 @@ string parseExpression(vector<string> expression)
 			{
 				dummyValue = "0";
 			}
+
 			else if (pointerType == "string")
 			{
 				dummyValue = "\"";
@@ -795,7 +836,7 @@ string parseExpression(vector<string> expression)
 	foundLoc = findFirst(expression, "<");
 	while (foundLoc != -1)
 	{
-		if (tokenType(&expression[foundLoc - 1]) == "int" && tokenType(&expression[foundLoc + 1]) == "int")
+		if (tokenType(&expression[foundLoc - 1]) == "int" && tokenType(&expression[foundLoc + 1]) == "int" || tokenType(&expression[foundLoc - 1]) == "float" && tokenType(&expression[foundLoc + 1]) == "float" || tokenType(&expression[foundLoc - 1]) == "int" && tokenType(&expression[foundLoc + 1]) == "float" || tokenType(&expression[foundLoc - 1]) == "float" && tokenType(&expression[foundLoc + 1]) == "int")
 		{
 			expression[foundLoc] = "true";
 			expression.erase(expression.begin() + foundLoc + 1);
@@ -813,7 +854,7 @@ string parseExpression(vector<string> expression)
 	foundLoc = findFirst(expression, ">");
 	while (foundLoc != -1)
 	{
-		if (tokenType(&expression[foundLoc - 1]) == "int" && tokenType(&expression[foundLoc + 1]) == "int")
+		if (tokenType(&expression[foundLoc - 1]) == "int" && tokenType(&expression[foundLoc + 1]) == "int") //|| tokenType(&expression[foundLoc - 1]) == "float" && tokenType(&expression[foundLoc + 1]) == "float" )
 		{
 			expression[foundLoc] = "true";
 			expression.erase(expression.begin() + foundLoc + 1);
@@ -831,7 +872,7 @@ string parseExpression(vector<string> expression)
 	foundLoc = findFirst(expression, "<=");
 	while (foundLoc != -1)
 	{
-		if (tokenType(&expression[foundLoc - 1]) == "int" && tokenType(&expression[foundLoc + 1]) == "int")
+		if (tokenType(&expression[foundLoc - 1]) == "int" && tokenType(&expression[foundLoc + 1]) == "int") // || tokenType(&expression[foundLoc - 1]) == "float" && tokenType(&expression[foundLoc + 1]) == "float")
 		{
 			expression[foundLoc] = "true";
 			expression.erase(expression.begin() + foundLoc + 1);
@@ -849,7 +890,7 @@ string parseExpression(vector<string> expression)
 	foundLoc = findFirst(expression, ">=");
 	while (foundLoc != -1)
 	{
-		if (tokenType(&expression[foundLoc - 1]) == "int" && tokenType(&expression[foundLoc + 1]) == "int")
+		if (tokenType(&expression[foundLoc - 1]) == "int" && tokenType(&expression[foundLoc + 1]) == "int" || tokenType(&expression[foundLoc - 1]) == "float" && tokenType(&expression[foundLoc + 1]) == "float")
 		{
 			expression[foundLoc] = "true";
 			expression.erase(expression.begin() + foundLoc + 1);
@@ -869,7 +910,7 @@ string parseExpression(vector<string> expression)
 	{
 		string leftToken = tokenType(&expression[foundLoc - 1]);
 		string rightToken = tokenType(&expression[foundLoc + 1]);
-		if ((leftToken == "int" && rightToken == "int") || (leftToken == "char" && rightToken == "char") || (leftToken == "bool" && rightToken == "bool") || ((leftToken == "*int" || leftToken == "*null") && (rightToken == "*int" || rightToken == "*null")) || ((leftToken == "*char" || leftToken == "*null") && (rightToken == "*char" || rightToken == "*null")))
+		if ((leftToken == "int" && rightToken == "int") || (leftToken == "float" && rightToken == "float") || (leftToken == "char" && rightToken == "char") || (leftToken == "bool" && rightToken == "bool") || ((leftToken == "*int" || leftToken == "*null") && (rightToken == "*int" || rightToken == "*null")) || ((leftToken == "*char" || leftToken == "*null") && (rightToken == "*char" || rightToken == "*null")))
 		{
 			expression[foundLoc] = "true";
 			expression.erase(expression.begin() + foundLoc + 1);
@@ -941,6 +982,8 @@ string parseExpression(vector<string> expression)
 	}
 
 	foundLoc = findFirst(expression, "int");
+	foundLoc = findFirst(expression, "float");
+
 	while (foundLoc != -1)
 	{
 		//if(tokenType(&))
@@ -953,6 +996,7 @@ string tokenType(string *token)
 {
 	unordered_map<string, symbolInfo *>::iterator it = symbolTable.find(*token);
 	char first = (*token)[0];
+	//char second = (*token)[1];
 	string pointerAdd = "";
 	if (first == '*') // pointer "literal" signifier, can't exist in the input file but is used in the expression parser as a dummy value
 	{
@@ -975,9 +1019,10 @@ string tokenType(string *token)
 	}
 	else if (first > 47 && first < 58)
 	{
+
 		if (token->find(".") != string::npos)
 		{
-			return pointerAdd + "double";
+			return pointerAdd + "float";
 		}
 		else
 		{
@@ -1111,7 +1156,7 @@ void showError(int code)
 		cout << "Cannot use deref on non-integer-pointer/char-pointer values." << endl;
 		break;
 	case 19:
-		cout << " use of undeclared variable ." << endl;
+		cout << " Missing  Brace  ." << endl;
 	default:
 		cout << "Undefined error." << endl;
 		break;

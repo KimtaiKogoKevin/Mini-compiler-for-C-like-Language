@@ -1,11 +1,13 @@
-int amvar1;
-int bevar2;
-if(amvar1<5) 
-    {
-        bevar2=amvar1+2;
-    }
-    else
-    {
-        bevar2=amvar1-2;
-    }
+int a;
+a=12;
+float b;
+b=16.7;
+if (a<6.9) 
+{
+a = a + 19.6 ;
+}
+else
+{
+  b= a - 8.99 ;
+ }
  

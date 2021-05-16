@@ -1,18 +1,30 @@
 int
-amvar1
+a
 ;
 
 
-int
-bevar2
+a
+=
+12
+;
+
+
+float
+b
+;
+
+
+b
+=
+16.7
 ;
 
 
 if
 (
-amvar1
+a
 <
-5
+6.9
 ) 
  1 
 
@@ -20,11 +32,11 @@ amvar1
 {
 
 
-bevar2
+a
 =
-amvar1
+a
 +
-2
+19.6
 ;
 
 
@@ -37,11 +49,11 @@ else
 {
 
 
-bevar2
+b
 =
-amvar1
+a
 -
-2
+8.99
 ;
 
 
