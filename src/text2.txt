@@ -1,2 +1,11 @@
-int a;
-a=12.55;
+ int var1;
+ var1=35;
+ float var2;
+ var2=16;
+  if (var2>6)
+   {
+     var1 = var2 + 130.890 ;
+     }else {
+       var 2= var1 - 160.908 ;
+       }
+ 

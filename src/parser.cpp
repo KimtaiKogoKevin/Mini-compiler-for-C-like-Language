@@ -88,7 +88,7 @@ int main()
 	FILE *ptr_file;
 	char buf[1000];
 
-	ptr_file = fopen("text.txt", "r");
+	ptr_file = fopen("text2.txt", "r");
 	if (!ptr_file)
 		return 1;
 
@@ -96,7 +96,10 @@ int main()
 		scan(buf);
 	fclose(ptr_file);
 
-	printf("############################################################################################## \n SOURCE CODE SCANNED \n");
+	printf("############################################################################################## \n SOURCE CODE SCANNED \n \n \n \n");
+
+	cout << "\n \n \n \n_____________________________START OF PARSER_________________________________________________________ \n \n \n \n \n ";
+
 
 	vector<string> tokens; // array to store tokens
 	breakTokens(&tokens);  //break input to tokens
@@ -106,7 +109,7 @@ int main()
 
 void breakTokens(vector<string> *tokenList)
 {
-	ifstream input("text.txt");
+	ifstream input("text2.txt");
 	string word = "";
 	bool isString = false;
 	//bool isKeyword = false;
@@ -498,7 +501,6 @@ void typeCheck(vector<string> tokens)
 		//return 0;
 	}
 
-	cout << "_____________________________START OF PARSER_________________________________________________________ \n ";
 
 	for (int i = 0; i < tokens.size(); i++)
 	{

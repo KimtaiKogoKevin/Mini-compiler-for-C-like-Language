@@ -1,8 +1,8 @@
 t1=a 
  t2=b 
- t3=a>6 
-   t4 = NOT t3 
+ t3=b>6 
+ t4 = NOT t3 
 if( t4 ) GOTO L1  
-t5=a+19.6 
- L1:  
- t6=a-8.99 
+t5=a+13.7 
+L1:  
+t6=a-16.4 

@@ -34,12 +34,12 @@ int main()
 
     if (strcmp(s[3].data, "+") == 0)
     {
-        fprintf(f2, "%s=%s+%s", s[j].temp, s[i + 2].data, s[i + 4].data);
+        fprintf(f2, "%s=%s+%s \n", s[j].temp, s[i + 2].data, s[i + 4].data);
         j++;
     }
     else if (strcmp(s[3].data, "-") == 0)
     {
-        fprintf(f2, "%s=%s-%s", s[j].temp, s[i + 2].data, s[i + 4].data);
+        fprintf(f2, "%s=%s-%s \n", s[j].temp, s[i + 2].data, s[i + 4].data);
         j++;
     }
     else if (strcmp(s[0].data, "int") == 0)
@@ -87,7 +87,7 @@ int main()
         }
         else if (strcmp(s[i].data, ")") == 0)
         {
-            fprintf(f2, "  %s = NOT %s \n", s[j].temp, s[j - 1].temp);
+            fprintf(f2, "%s = NOT %s \n", s[j].temp, s[j - 1].temp);
             j++;
         }
         else if (strcmp(s[i].data, "1") == 0)
@@ -102,7 +102,7 @@ int main()
         }
         else if (strcmp(s[i].data, "else") == 0)
         {
-            fprintf(f2, " L1:  \n", s[j - 1].temp);
+            fprintf(f2, "L1:  \n", s[j - 1].temp);
 
             //j++;
         }
@@ -110,7 +110,7 @@ int main()
         else if (strcmp(s[i].data, "-") == 0)
         {
 
-            fprintf(f2, " %s=%s-%s \n", s[j].temp, s[i - 1].data, s[i + 1].data);
+            fprintf(f2, "%s=%s-%s \n", s[j].temp, s[i - 1].data, s[i + 1].data);
 
             j++;
         }
