@@ -1,6 +1,6 @@
 t1=a 
  t2=b 
- t3=a<6.9 
+ t3=a>6 
    t4 = NOT t3 
 if( t4 ) GOTO L1  
 t5=a+19.6 

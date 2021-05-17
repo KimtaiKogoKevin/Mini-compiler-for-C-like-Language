@@ -1,13 +1,11 @@
-int a;
-a=12;
-float b;
-b=16.7;
-if (a<6.9) 
-{
-a = a + 19.6 ;
-}
-else
-{
-  b= a - 8.99 ;
- }
+ float a;
+ a=35;
+ int b;
+ b=16;
+  if (b>6)
+   {
+     a = a + 13.7 ;
+     }else {
+       b= a - 16.4 ;
+       }
  

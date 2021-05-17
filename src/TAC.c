@@ -77,6 +77,14 @@ int main()
 
 
         }
+         else if (strcmp(s[i].data, ">") == 0)
+        {
+            fprintf(f2, "%s=%s>%s \n ", s[j].temp, s[i - 1].data, s[i + 1].data);
+            j++;
+            
+
+
+        }
         else if (strcmp(s[i].data, ")") == 0)
         {
             fprintf(f2, "  %s = NOT %s \n", s[j].temp, s[j - 1].temp);

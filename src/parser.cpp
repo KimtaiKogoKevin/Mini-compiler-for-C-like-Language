@@ -79,6 +79,8 @@ bool functionCheck(vector<string>);
 // Preconditions: None.
 // Postconditions: An error message appears in the console.
 void showError(int);
+void ShowWarning(int);
+
 
 int main()
 {
@@ -184,7 +186,7 @@ void typeCheck(vector<string> tokens)
 		{
 			fileScope++;
 		}
-		
+
 		else if (current == "}")
 		{
 			fileScope--;
@@ -202,6 +204,16 @@ void typeCheck(vector<string> tokens)
 				pointerAdd = "*";
 			}
 			string name = tokens[i + 1]; // will be of type int * or int for example + 1 is for the name of function or identifier
+			if (tokenType(&tokens[i + 2]) == "Semi-colon")
+			{
+				string colon = tokens[i + 2];
+			}
+			else
+			{
+				showError(20);
+				return;
+			}
+
 			unordered_map<string, symbolInfo *>::iterator it = symbolTable.find(name);
 			string next = tokens[i + 2];
 			vector<string> arguments;
@@ -250,7 +262,9 @@ void typeCheck(vector<string> tokens)
 			}
 			else // identifier declaration logic
 			{
+
 				i++;
+
 				if (it != symbolTable.end() && (it->second)->getScope() == fileScope) // duplicate id checks if the symbol table has not reached its end and if the file scopes are equal
 				{
 					showError(4);
@@ -318,20 +332,20 @@ void typeCheck(vector<string> tokens)
 				return;
 			}
 		} //end of index checking
-		
 
 		// assignment checking
 		else if (current == "=") // assignment
 		{
 			string lhsType = tokenType(&tokens[i - 1]); //define lhs type
-			if (tokens[i + 2] == "(")					// assigning a function to a value
+
+			if (tokens[i + 2] == "(") // assigning a function to a value
 			{
 				if (symbolTable.find(tokens[i + 1]) == symbolTable.end()) // function not found
 				{
 					showError(5);
 					return;
 				}
-				if (tokenType(&tokens[i + 1]) != lhsType ) // mismatched types
+				if (tokenType(&tokens[i + 1]) != lhsType) // mismatched types
 				{
 					showError(9);
 					return;
@@ -340,41 +354,66 @@ void typeCheck(vector<string> tokens)
 			else // assigning an expression
 			{
 				vector<string> expression;
-				
-
 				i++;
 				current = tokens[i];
 				while (current != ";")
 				{
+
 					expression.push_back(current);
-					
+
 					i++;
 					current = tokens[i];
 				}
+
 				string rhsType = parseExpression(expression);
-				//cout<<lhsType<<endl;
+				//cout << lhsType << endl;
 				//cout<<rhsType<<endl;
 				int length;
 				length = rhsType.size();
 				//cout<<length<<endl;
-				
 
 				if (rhsType == "e")
 				{
 					return;
 				}
-
-				if (rhsType != lhsType && length > 3 ) // check for variables assignment
+				if (rhsType != lhsType && length > 3) // check for variables assignment
 				{
+					if (rhsType == "int" && lhsType == "float ")
+					{
+						rhsType = "float";
+					}
+					else if (rhsType == "float" && lhsType == "int")
+					{
+
+						lhsType = "int";
+					}
+
+					ShowWarning(1);
+					//return;
+				}
+
+				if (rhsType != lhsType && length < 5) // check for variables assignment
+				{
+					if (rhsType == "int" && lhsType == "float ")
+					{
+						rhsType = "float";
+					}
+					else if (rhsType == "float" && lhsType == "int")
+					{
+
+						lhsType = "int";
+					}
+
+					ShowWarning(1);
+					//return;
+				}
+
+				else if (rhsType != lhsType && !(rhsType == "*null" && (lhsType == "*int" || lhsType == "*char" || lhsType == "*float"))) // assignment check
+				{
+
 					showError(14);
 					return;
 				}
-				// else if (rhsType != lhsType && !(rhsType == "*null" && (lhsType == "*int" || lhsType == "*char" || lhsType == "*float"))) // assignment check
-				// {
-					
-                //      showError(14);
-				// 	return;
-				// }
 			}
 		}
 
@@ -443,13 +482,13 @@ void typeCheck(vector<string> tokens)
 			}
 		}
 	}
-     
-	 if (fileScope!=0)
-	 {
-		 showError(19);
-		 return;
-	 }
-	 
+
+	if (fileScope != 0)
+	{
+		showError(19);
+		return;
+	}
+
 	//print the vecotr stirng
 	fstream outp;
 	outp.open("inputTAC.txt", fstream::out);
@@ -504,8 +543,6 @@ string parseExpression(vector<string> expression)
 			expression.erase(expression.begin() + foundLoc + 1);
 			current = expression[foundLoc + 1];
 		}
-		
-		
 
 		string subExprType = parseExpression(subExpr);
 		if (subExprType == "e")
@@ -528,6 +565,10 @@ string parseExpression(vector<string> expression)
 		else if (subExprType == "int")
 		{
 			dummyValue = "0";
+		}
+		else if (subExprType == "float")
+		{
+			dummyValue = "1";
 		}
 
 		else if (subExprType == "string")
@@ -725,19 +766,20 @@ string parseExpression(vector<string> expression)
 	{
 		string leftToken = tokenType(&expression[foundLoc - 1]);
 		string rightToken = tokenType(&expression[foundLoc + 1]);
-		if (leftToken == "int" && rightToken == "int" || leftToken == "float" && rightToken == "float" || leftToken == "float" && rightToken == "int" || leftToken == "int" && rightToken == "float")
+		//cout<<leftToken<<endl<<rightToken;
+		if (leftToken == "int" && rightToken == "int") //|| leftToken == "float" && rightToken == "float"  || leftToken == "float" && rightToken == "int" || leftToken == "int" && rightToken == "float")
 		{
 			expression[foundLoc] = "0";
 			expression.erase(expression.begin() + foundLoc + 1);
 			expression.erase(expression.begin() + foundLoc - 1);
 		}
 
-		// else if (leftToken == "float" && rightToken == "float" )
-		// {
-		// 	expression[foundLoc] = "0";
-		// 	expression.erase(expression.begin() + foundLoc + 1);
-		// 	expression.erase(expression.begin() + foundLoc - 1);
-		// }
+		else if (leftToken == "float" && rightToken == "float")
+		{
+			expression[foundLoc] = "1";
+			expression.erase(expression.begin() + foundLoc + 1);
+			expression.erase(expression.begin() + foundLoc - 1);
+		}
 
 		else if ((leftToken[0] == '*' && rightToken == "int") || (leftToken == "int" && rightToken[0] == '*'))
 		{
@@ -762,7 +804,7 @@ string parseExpression(vector<string> expression)
 			}
 			else if (pointerType == "float")
 			{
-				dummyValue = "0";
+				dummyValue = ".0.";
 			}
 
 			else if (pointerType == "string")
@@ -792,6 +834,7 @@ string parseExpression(vector<string> expression)
 	{
 		string leftToken = tokenType(&expression[foundLoc - 1]);
 		string rightToken = tokenType(&expression[foundLoc + 1]);
+		//cout<<rightToken;
 		if (leftToken == "int" && rightToken == "int" || leftToken == "float" && rightToken == "float" || leftToken == "float" && rightToken == "int" || leftToken == "int" && rightToken == "float")
 		{
 			expression[foundLoc] = "0";
@@ -854,7 +897,7 @@ string parseExpression(vector<string> expression)
 	foundLoc = findFirst(expression, ">");
 	while (foundLoc != -1)
 	{
-		if (tokenType(&expression[foundLoc - 1]) == "int" && tokenType(&expression[foundLoc + 1]) == "int") //|| tokenType(&expression[foundLoc - 1]) == "float" && tokenType(&expression[foundLoc + 1]) == "float" )
+		if (tokenType(&expression[foundLoc - 1]) == "int" && tokenType(&expression[foundLoc + 1]) == "int" || tokenType(&expression[foundLoc - 1]) == "float" && tokenType(&expression[foundLoc + 1]) == "float" || tokenType(&expression[foundLoc - 1]) == "int" && tokenType(&expression[foundLoc + 1]) == "float" || tokenType(&expression[foundLoc - 1]) == "float" && tokenType(&expression[foundLoc + 1]) == "int")
 		{
 			expression[foundLoc] = "true";
 			expression.erase(expression.begin() + foundLoc + 1);
@@ -872,7 +915,7 @@ string parseExpression(vector<string> expression)
 	foundLoc = findFirst(expression, "<=");
 	while (foundLoc != -1)
 	{
-		if (tokenType(&expression[foundLoc - 1]) == "int" && tokenType(&expression[foundLoc + 1]) == "int") // || tokenType(&expression[foundLoc - 1]) == "float" && tokenType(&expression[foundLoc + 1]) == "float")
+		if (tokenType(&expression[foundLoc - 1]) == "int" && tokenType(&expression[foundLoc + 1]) == "int" || tokenType(&expression[foundLoc - 1]) == "float" && tokenType(&expression[foundLoc + 1]) == "float")
 		{
 			expression[foundLoc] = "true";
 			expression.erase(expression.begin() + foundLoc + 1);
@@ -1017,6 +1060,10 @@ string tokenType(string *token)
 	{
 		return pointerAdd + "char";
 	}
+	else if (token->find(";") != string::npos)
+	{
+		return pointerAdd + "Semi-colon";
+	}
 	else if (first > 47 && first < 58)
 	{
 
@@ -1096,6 +1143,15 @@ bool functionCheck(vector<string> function)
 	return true;
 }
 
+void ShowWarning( int code){
+	cout<< "Warning "  <<   code   << "   on line  " << lineNo << " : ";
+	switch(code){
+		case 1:
+			cout << " Mismatched assignment  , Resolved Automatically." << endl;
+			break;
+	}
+}
+
 void showError(int code)
 {
 	cout << "Error " << code << " on line " << lineNo << " : ";
@@ -1157,6 +1213,9 @@ void showError(int code)
 		break;
 	case 19:
 		cout << " Missing  Brace  ." << endl;
+	case 20:
+		cout << " Missing  Semi-colon ." << endl;
+		
 	default:
 		cout << "Undefined error." << endl;
 		break;
