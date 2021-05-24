@@ -7,10 +7,15 @@ struct three
 {
     char data[10], temp[7];
 } s[30];
+char temp1[7];
+char temp2[7];
+char temp3[7];
+char temp4[7];
+
 int main()
 {
     char d1[7], d2[7] = "t"; // two arrays one initialized to t for temporary variable
-    int i = 0, j = 1, len = 0;
+    int i = 0, j = 0, len = 0, k = 0;
     FILE *f1, *f2;
 
     //clrscr();
@@ -19,7 +24,7 @@ int main()
     while (fscanf(f1, "%s", s[len].data) != EOF) //%s reads up to white space and stores the string read in s struct data
     {
 
-      // fprintf(f2, "%s \n", s[len].data);
+        // fprintf(f2, "%s \n", s[len].data);
 
         ++len;
 
@@ -34,6 +39,7 @@ int main()
 
     if (strcmp(s[3].data, "+") == 0)
     {
+
         fprintf(f2, "%s=%s+%s \n", s[j].temp, s[i + 2].data, s[i + 4].data);
         j++;
     }
@@ -45,13 +51,16 @@ int main()
     else if (strcmp(s[0].data, "int") == 0)
     {
         fprintf(f2, "%s=%s \n ", s[j].temp, s[i + 1].data);
+            
         j++;
     }
-     if (strcmp(s[0].data, "float") == 0)
-        {
-            fprintf(f2, "%s=%s \n ", s[j].temp, s[i + 1].data);
-            j++;
-        }
+    if (strcmp(s[0].data, "float") == 0)
+    {
+        fprintf(f2, "%s=%s \n ", s[j].temp, s[i + 1].data);
+        //char tempone[7] = s[j].temp;
+
+        j++;
+    }
 
     for (i = 2; i < len; ++i)
     {
@@ -61,29 +70,44 @@ int main()
 
         if (strcmp(s[i].data, "float") == 0)
         {
+            //fprintf(f2, "%s=%s \n ", s[j].temp, s[i + 1].data);
+
             fprintf(f2, "%s=%s \n ", s[j].temp, s[i + 1].data);
+            // strcpy(tempholder,s[j].temp);
+            // strcpy(dataholder,s[i+1].data);
+
             j++;
         }
         else if (strcmp(s[i].data, "int") == 0)
         {
             fprintf(f2, "%s=%s \n ", s[j].temp, s[i + 1].data);
+            //  strcpy(tempholder,s[j].temp);
+            //  strcpy(dataholder,s[i+1].data);
+
             j++;
         }
         else if (strcmp(s[i].data, "<") == 0)
+
         {
+
+           // printf("data %s  %s \n", s[i-2].temp, s[i-1].data);
+
+
+
+
             fprintf(f2, "%s=%s<%s \n ", s[j].temp, s[i - 1].data, s[i + 1].data);
+
             j++;
-            
-
-
         }
-         else if (strcmp(s[i].data, ">") == 0)
+        else if (strcmp(s[i].data, ">") == 0)
+
         {
+
+            printf("data %s  %s \n", s[j-1].temp, s[i-1].data);
+
+
             fprintf(f2, "%s=%s>%s \n ", s[j].temp, s[i - 1].data, s[i + 1].data);
             j++;
-            
-
-
         }
         else if (strcmp(s[i].data, ")") == 0)
         {
@@ -120,10 +144,9 @@ int main()
         // j++;
     }
     printf("THREE ADREESS OUTPUT GENERATED IN FILE: OUT.TXT");
-       
+
     // fprintf(f2, "\n%s=%s", s[0].data, s[j - 1].temp);
     fclose(f1);
     fclose(f2);
     getch();
-
 }

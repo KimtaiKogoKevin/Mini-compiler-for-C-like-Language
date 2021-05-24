@@ -1,8 +1,8 @@
-t1=a 
- t2=b 
- t3=b>6 
- t4 = NOT t3 
-if( t4 ) GOTO L1  
-t5=a+13.7 
+t0=a 
+t1=b 
+t2=a>6.7 
+t3 = NOT t2 
+if( t3 ) GOTO L1  
+t4=a+13.5 
 L1:  
-t6=a-16.4 
+t5=b-16.7 

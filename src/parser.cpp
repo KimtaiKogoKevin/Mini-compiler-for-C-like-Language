@@ -81,14 +81,13 @@ bool functionCheck(vector<string>);
 void showError(int);
 void ShowWarning(int);
 
-
 int main()
 {
 
 	FILE *ptr_file;
 	char buf[1000];
 
-	ptr_file = fopen("text2.txt", "r");
+	ptr_file = fopen("text.txt", "r");
 	if (!ptr_file)
 		return 1;
 
@@ -100,7 +99,6 @@ int main()
 
 	cout << "\n \n \n \n_____________________________START OF PARSER_________________________________________________________ \n \n \n \n \n ";
 
-
 	vector<string> tokens; // array to store tokens
 	breakTokens(&tokens);  //break input to tokens
 	typeCheck(tokens);	   //check the tokens
@@ -109,7 +107,7 @@ int main()
 
 void breakTokens(vector<string> *tokenList)
 {
-	ifstream input("text2.txt");
+	ifstream input("text.txt");
 	string word = "";
 	bool isString = false;
 	//bool isKeyword = false;
@@ -216,1011 +214,1171 @@ void typeCheck(vector<string> tokens)
 				showError(20);
 				return;
 			}
+			
+			
 
-			unordered_map<string, symbolInfo *>::iterator it = symbolTable.find(name);
-			string next = tokens[i + 2];
-			vector<string> arguments;
-			if (next == "(") // function declaration logic
-			{
-				if (current == "string")
+				unordered_map<string, symbolInfo *>::iterator it = symbolTable.find(name);
+				string next = tokens[i + 2];
+				vector<string> arguments;
+				if (next == "(") // function declaration logic
 				{
-					showError(8);
-					return;
-				}
-
-				if (name == "Main")
-				{
-					if (it != symbolTable.end() || fileScope != 0) // main already exists in symbol table or not currently in global scope
+					if (current == "string")
 					{
-						showError(1);
+						showError(8);
 						return;
 					}
-					else if (tokens[i + 2] == "(" && tokens[i + 3] != ")") //main cannot take arguments
+
+					if (name == "Main")
 					{
-						showError(2);
+						if (it != symbolTable.end() || fileScope != 0) // main already exists in symbol table or not currently in global scope
+						{
+							showError(1);
+							return;
+						}
+						else if (tokens[i + 2] == "(" && tokens[i + 3] != ")") //main cannot take arguments
+						{
+							showError(2);
+							return;
+						}
+					}
+
+					currentFunc = name;													  //name of the function
+					if (it != symbolTable.end() && (it->second)->getScope() == fileScope) // duplicate function
+					{
+						showError(3);
 						return;
 					}
-				}
-
-				currentFunc = name;													  //name of the function
-				if (it != symbolTable.end() && (it->second)->getScope() == fileScope) // duplicate function
-				{
-					showError(3);
-					return;
-				}
-				i += 2; // advancing to the arguments
-				int intoArgs = 0;
-				while (next != ")")
-				{
-					intoArgs++;
-					next = tokens[i + intoArgs];
-					if (types.find(next) != types.end())
+					i += 2; // advancing to the arguments
+					int intoArgs = 0;
+					while (next != ")")
 					{
-						arguments.push_back(next);
+						intoArgs++;
+						next = tokens[i + intoArgs];
+						if (types.find(next) != types.end())
+						{
+							arguments.push_back(next);
+						}
 					}
+					symbolInfo *info = new symbolInfo(fileScope, current, arguments);
+					pair<string, symbolInfo *> data(name, info);
+					symbolTable.insert(data);
 				}
-				symbolInfo *info = new symbolInfo(fileScope, current, arguments);
-				pair<string, symbolInfo *> data(name, info);
-				symbolTable.insert(data);
-			}
-			else // identifier declaration logic
-			{
-
-				i++;
-
-				if (it != symbolTable.end() && (it->second)->getScope() == fileScope) // duplicate id checks if the symbol table has not reached its end and if the file scopes are equal
+				else // identifier declaration logic
 				{
-					showError(4);
-					return;
-				}
 
-				symbolInfo *info = new symbolInfo(fileScope, pointerAdd + current); // adds id
-				pair<string, symbolInfo *> data(name, info);
-				symbolTable.insert(data);
-			}
-		}																															// end of data type checking / declaration part
-																																	//start of function call check
-		else if (tokens[i + 1] == "(" && operators.find(current[0]) == operators.end() && keywords.find(current) == keywords.end()) // function calls
-		{
-			if (symbolTable.find(current) != symbolTable.end())
-			{
-				vector<string> function;
-				function.push_back(current); // function name
-				while (current != ")")
-				{
 					i++;
-					current = tokens[i];
-					function.push_back(current);
+
+					if (it != symbolTable.end() && (it->second)->getScope() == fileScope) // duplicate id checks if the symbol table has not reached its end and if the file scopes are equal
+					{
+						showError(4);
+						return;
+					}
+
+					symbolInfo *info = new symbolInfo(fileScope, pointerAdd + current); // adds id
+					pair<string, symbolInfo *> data(name, info);
+					symbolTable.insert(data);
 				}
-				bool valid = functionCheck(function);
-				if (!valid)
+			}
+
+			// // else if (tokens[i] == "=")
+			// // {
+			// // 	if (tokenType(&tokens[i + 2]) == "Semi-colon")
+			// {
+			// 	string colon = tokens[i + 2];
+			// }
+			// else if (tokenType(&tokens[i + 4]) == "Semi-colon")
+			// {
+			// 	string colon = tokens[i + 4];
+
+			// }
+			// else
+			// {
+			// 	showError(20);
+			// 	return;
+			// }
+				
+			// // }
+																																
+																																		//start of function call check
+			else if (tokens[i + 1] == "(" && operators.find(current[0]) == operators.end() && keywords.find(current) == keywords.end()) // function calls
+			{
+				if (symbolTable.find(current) != symbolTable.end())
 				{
-					return;
+					vector<string> function;
+					function.push_back(current); // function name
+					while (current != ")")
+					{
+						i++;
+						current = tokens[i];
+						function.push_back(current);
+					}
+					bool valid = functionCheck(function);
+					if (!valid)
+					{
+						return;
+					}
 				}
-			}
-			else // function not in symbol table
-			{
-				showError(5);
-				return;
-			}
-		} // end of function checking
-
-		//start of indexing check
-		else if (current == "[") // checking if indexing is being applied to a string and if the argument is an integer
-		{
-			if (tokenType(&tokens[i - 1]) != "string")
-			{
-				showError(13);
-				return;
-			}
-
-			vector<string> expression;
-			i++;
-			current = tokens[i];
-			while (current != "]")
-			{
-				expression.push_back(current);
-				i++;
-				current = tokens[i];
-			}
-
-			string expressionType = parseExpression(expression);
-			if (expressionType == "e")
-			{
-				return;
-			}
-			else if (expressionType != "int")
-			{
-				showError(12);
-				return;
-			}
-		} //end of index checking
-
-		// assignment checking
-		else if (current == "=") // assignment
-		{
-			string lhsType = tokenType(&tokens[i - 1]); //define lhs type
-
-			if (tokens[i + 2] == "(") // assigning a function to a value
-			{
-				if (symbolTable.find(tokens[i + 1]) == symbolTable.end()) // function not found
+				else // function not in symbol table
 				{
 					showError(5);
 					return;
 				}
-				if (tokenType(&tokens[i + 1]) != lhsType) // mismatched types
+			} // end of function checking
+
+			//start of indexing check
+			else if (current == "[") // checking if indexing is being applied to a string and if the argument is an integer
+			{
+				if (tokenType(&tokens[i - 1]) != "string")
 				{
-					showError(9);
+					showError(13);
 					return;
 				}
-			}
-			else // assigning an expression
-			{
+
 				vector<string> expression;
 				i++;
 				current = tokens[i];
-				while (current != ";")
+				while (current != "]")
 				{
-
 					expression.push_back(current);
-
 					i++;
 					current = tokens[i];
 				}
 
-				string rhsType = parseExpression(expression);
-				//cout << lhsType << endl;
-				//cout<<rhsType<<endl;
-				int length;
-				length = rhsType.size();
-				//cout<<length<<endl;
-
-				if (rhsType == "e")
+				string expressionType = parseExpression(expression);
+				if (expressionType == "e")
 				{
 					return;
 				}
-				if (rhsType != lhsType && length > 3) // check for variables assignment
+				else if (expressionType != "int")
 				{
-					if (rhsType == "int" && lhsType == "float ")
-					{
-						rhsType = "float";
-					}
-					else if (rhsType == "float" && lhsType == "int")
-					{
-
-						lhsType = "int";
-					}
-
-					ShowWarning(1);
-					//return;
+					showError(12);
+					return;
 				}
+			} //end of index checking
 
-				if (rhsType != lhsType && length < 5) // check for variables assignment
+			// assignment checking
+			else if (current == "=") // assignment
+			{
+
+				string lhsType = tokenType(&tokens[i - 1]); //define lhs type
+			if (tokenType(&tokens[i + 2]) == "Semi-colon")
+			{
+				string colon = tokens[i + 2];
+			}
+			else if (tokenType(&tokens[i + 4]) == "Semi-colon")
+			{
+				string colon = tokens[i + 4];
+
+			}
+			else
+			{
+				showError(20);
+				return;
+			}
+				if (tokens[i + 2] == "(") // assigning a function to a value
 				{
-					if (rhsType == "int" && lhsType == "float ")
+					if (symbolTable.find(tokens[i + 1]) == symbolTable.end()) // function not found
 					{
-						rhsType = "float";
+						showError(5);
+						return;
 					}
-					else if (rhsType == "float" && lhsType == "int")
+					if (tokenType(&tokens[i + 1]) != lhsType) // mismatched types
 					{
-
-						lhsType = "int";
+						showError(9);
+						return;
 					}
-
-					ShowWarning(1);
-					//return;
 				}
-
-				else if (rhsType != lhsType && !(rhsType == "*null" && (lhsType == "*int" || lhsType == "*char" || lhsType == "*float"))) // assignment check
+				else // assigning an expression
 				{
+					vector<string> expression;
+					i++;
+					current = tokens[i];
+					while (current != ";")
+					{
 
-					showError(14);
+						expression.push_back(current);
+
+						i++;
+						current = tokens[i];
+					}
+
+					string rhsType = parseExpression(expression);
+					//cout << lhsType << endl;
+
+					//cout<<rhsType<<endl;
+					int length;
+					//length = rhsType.size();
+					//cout<<length<<endl;
+
+					if (rhsType == "e")
+					{
+						return;
+					}
+					if (rhsType != lhsType && length > 3) // check for variables assignment
+					{
+						if (rhsType == "int" && lhsType == "float ")
+						{
+							rhsType = "float";
+						}
+						else if (rhsType == "float" && lhsType == "int")
+						{
+
+							rhsType = "int";
+						}
+
+						ShowWarning(1);
+						//return;
+					}
+
+					if (rhsType != lhsType && length < 5) // check for variables assignment
+					{
+						if (rhsType == "int" && lhsType == "float ")
+						{
+							rhsType = "float";
+						}
+						else if (rhsType == "float" && lhsType == "int")
+						{
+
+							rhsType = "int";
+						}
+
+						ShowWarning(1);
+						//return;
+					}
+
+					else if (rhsType != lhsType && !(rhsType == "*null" && (lhsType == "*int" || lhsType == "*char" || lhsType == "*float"))) // assignment check
+					{
+
+						showError(14);
+						return;
+					}
+				}
+			}
+
+			// else if(tokenType(&tokens[i-2])!="int" && tokenType(&tokens[i]) == ";"  ){
+
+			// 	std::cout << tokens[i-2];
+			//     cout << std::endl;
+
+			// 		showError(19);
+			// 		return;
+
+			// }
+			else if (current == "return")
+			{
+				vector<string> expression;
+				i++;
+				string next = tokens[i];
+				while (next != ";")
+				{
+					expression.push_back(next);
+					i++;
+					next = tokens[i];
+				}
+				string returnType = parseExpression(expression);
+
+				unordered_map<string, symbolInfo *>::iterator it = symbolTable.find(currentFunc);
+
+				if (returnType == "e")
+				{
+					return;
+				}
+				else if ((it->second)->getType() != returnType)
+				{
+					showError(8);
+					return;
+				}
+			}
+			else if (current == "if" || current == "while")
+			{
+				vector<string> expression;
+				i += 2;
+				string next = tokens[i];
+				while (next != ")")
+				{
+					expression.push_back(next);
+					i++;
+					next = tokens[i];
+				}
+				string loopCondition = parseExpression(expression);
+
+				if (loopCondition == "e")
+				{
+					return;
+				}
+				else if (loopCondition != "bool")
+				{
+					if (current == "if")
+					{
+						showError(10);
+					}
+					else
+					{
+						showError(11);
+					}
 					return;
 				}
 			}
 		}
 
-		// else if(tokenType(&tokens[i-2])!="int" && tokenType(&tokens[i]) == ";"  ){
-
-		// 	std::cout << tokens[i-2];
-		//     cout << std::endl;
-
-		// 		showError(19);
-		// 		return;
-
-		// }
-		else if (current == "return")
+		if (fileScope != 0)
 		{
-			vector<string> expression;
-			i++;
-			string next = tokens[i];
-			while (next != ";")
-			{
-				expression.push_back(next);
-				i++;
-				next = tokens[i];
-			}
-			string returnType = parseExpression(expression);
-
-			unordered_map<string, symbolInfo *>::iterator it = symbolTable.find(currentFunc);
-
-			if (returnType == "e")
-			{
-				return;
-			}
-			else if ((it->second)->getType() != returnType)
-			{
-				showError(8);
-				return;
-			}
+			showError(19);
+			return;
 		}
-		else if (current == "if" || current == "while")
+
+		//print the vecotr stirng
+		fstream outp;
+		outp.open("inputTAC.txt", fstream::out);
+		if (!outp)
 		{
-			vector<string> expression;
-			i += 2;
-			string next = tokens[i];
-			while (next != ")")
-			{
-				expression.push_back(next);
-				i++;
-				next = tokens[i];
-			}
-			string loopCondition = parseExpression(expression);
-
-			if (loopCondition == "e")
-			{
-				return;
-			}
-			else if (loopCondition != "bool")
-			{
-				if (current == "if")
-				{
-					showError(10);
-				}
-				else
-				{
-					showError(11);
-				}
-				return;
-			}
+			cout << " \n ERROR";
+			//return 0;
 		}
+
+		for (int i = 0; i < tokens.size(); i++)
+		{
+			//printing parsed tokens on command line
+			//std::cout << tokens[i];
+			//cout << std::endl;
+			//printing the tokens to the input file for three address codes
+			if (tokens[i] == ")")
+			{
+				outp << tokens[i] << " \n 1 ";
+				outp << "\n";
+			}
+			else
+			{
+				outp << tokens[i];
+				outp << "\n";
+			}
+
+			//***** alternate method *******
+			//std::cout << myVector.at(i) << std::endl;
+		}
+		cout << "PARSE SUCCESSFUL.";
+		outp.close();
 	}
 
-	if (fileScope != 0)
+	string parseExpression(vector<string> expression)
 	{
-		showError(19);
-		return;
-	}
-
-	//print the vecotr stirng
-	fstream outp;
-	outp.open("inputTAC.txt", fstream::out);
-	if (!outp)
-	{
-		cout << " \n ERROR";
-		//return 0;
-	}
-
-
-	for (int i = 0; i < tokens.size(); i++)
-	{
-		//printing parsed tokens on command line
-		//std::cout << tokens[i];
-		//cout << std::endl;
-		//printing the tokens to the input file for three address codes
-		if (tokens[i] == ")")
+		// This function goes through all the expression operators (and parentheses) in
+		// their appropriate evaluation order. It resolves each operator by removing all
+		// tokens used by the operator, then replaces the operator with a literal
+		// value of the operator's output type.
+		// ex. The sequence 4, <, 2 will have 4 and 2 removed, then < replaced with true.
+		// For literal pointers, * is attached to the appropriate literal value to denote it.
+		int foundLoc = findFirst(expression, "(");
+		while (foundLoc != -1)
 		{
-			outp << tokens[i] << " \n 1 ";
-			outp << "\n";
-		}
-		else
-		{
-			outp << tokens[i];
-			outp << "\n";
-		}
+			vector<string> subExpr;
+			string current = expression[foundLoc + 1];
+			while (current != ")") // pushes  the expression to subexp vector arrray
+			{
+				subExpr.push_back(current);
+				expression.erase(expression.begin() + foundLoc + 1);
+				current = expression[foundLoc + 1];
+			}
 
-		//***** alternate method *******
-		//std::cout << myVector.at(i) << std::endl;
-	}
-	cout << "PARSE SUCCESSFUL.";
-	outp.close();
-}
+			string subExprType = parseExpression(subExpr);
+			if (subExprType == "e")
+			{
+				return "e";
+			}
 
-string parseExpression(vector<string> expression)
-{
-	// This function goes through all the expression operators (and parentheses) in
-	// their appropriate evaluation order. It resolves each operator by removing all
-	// tokens used by the operator, then replaces the operator with a literal
-	// value of the operator's output type.
-	// ex. The sequence 4, <, 2 will have 4 and 2 removed, then < replaced with true.
-	// For literal pointers, * is attached to the appropriate literal value to denote it.
-	int foundLoc = findFirst(expression, "(");
-	while (foundLoc != -1)
-	{
-		vector<string> subExpr;
-		string current = expression[foundLoc + 1];
-		while (current != ")") // pushes  the expression to subexp vector arrray
-		{
-			subExpr.push_back(current);
-			expression.erase(expression.begin() + foundLoc + 1);
-			current = expression[foundLoc + 1];
-		}
+			string pointerAdd;
+			string dummyValue;
+			if (subExprType[0] == '*')
+			{
+				pointerAdd = "*";
+				subExprType = subExprType.substr(1, subExprType.size());
+			}
 
-		string subExprType = parseExpression(subExpr);
-		if (subExprType == "e")
-		{
-			return "e";
-		}
+			if (subExprType == "char")
+			{
+				dummyValue = "\'";
+			}
+			else if (subExprType == "int")
+			{
+				dummyValue = "0";
+			}
+			else if (subExprType == "float")
+			{
+				dummyValue = "1";
+			}
 
-		string pointerAdd;
-		string dummyValue;
-		if (subExprType[0] == '*')
-		{
-			pointerAdd = "*";
-			subExprType = subExprType.substr(1, subExprType.size());
-		}
+			else if (subExprType == "string")
+			{
+				dummyValue = "\"";
+			}
+			else if (subExprType == "bool")
+			{
+				dummyValue = "true";
+			}
+			expression[foundLoc] = pointerAdd + dummyValue;
+			expression.erase(expression.begin() + foundLoc + 1); // erasing ")"
 
-		if (subExprType == "char")
-		{
-			dummyValue = "\'";
+			foundLoc = findFirst(expression, "(");
 		}
-		else if (subExprType == "int")
-		{
-			dummyValue = "0";
-		}
-		else if (subExprType == "float")
-		{
-			dummyValue = "1";
-		}
-
-		else if (subExprType == "string")
-		{
-			dummyValue = "\"";
-		}
-		else if (subExprType == "bool")
-		{
-			dummyValue = "true";
-		}
-		expression[foundLoc] = pointerAdd + dummyValue;
-		expression.erase(expression.begin() + foundLoc + 1); // erasing ")"
-
-		foundLoc = findFirst(expression, "(");
-	}
-
-	foundLoc = findFirst(expression, "[");
-	while (foundLoc != -1)
-	{
-		if (tokenType(&expression[foundLoc - 1]) != "string")
-		{
-			showError(13);
-			return "e";
-		}
-
-		vector<string> subExpr;
-		string current = expression[foundLoc + 1];
-		while (current != "]")
-		{
-			subExpr.push_back(current);
-			expression.erase(expression.begin() + foundLoc + 1);
-			current = expression[foundLoc + 1];
-		}
-
-		string expressionType = parseExpression(subExpr);
-		if (expressionType == "e")
-		{
-			return "e";
-		}
-		else if (expressionType != "int")
-		{
-			showError(12);
-			return "e";
-		}
-
-		expression[foundLoc] = "\'";
-		expression.erase(expression.begin() + foundLoc + 1); // erasing "]"
-		expression.erase(expression.begin() + foundLoc - 1); // erasing string id
 
 		foundLoc = findFirst(expression, "[");
-	}
-
-	foundLoc = findFirst(expression, "|");
-	while (foundLoc != -1)
-	{
-		vector<string> subExpr;
-		string current = expression[foundLoc + 1];
-		while (current != "|")
+		while (foundLoc != -1)
 		{
-			subExpr.push_back(current);
-			expression.erase(expression.begin() + foundLoc + 1);
-			current = expression[foundLoc + 1];
-		}
+			if (tokenType(&expression[foundLoc - 1]) != "string")
+			{
+				showError(13);
+				return "e";
+			}
 
-		string subExprType = parseExpression(subExpr);
-		if (subExprType == "e")
-		{
-			return "e";
-		}
-		else if (subExprType != "int")
-		{
-			showError(15);
-			return "e";
-		}
+			vector<string> subExpr;
+			string current = expression[foundLoc + 1];
+			while (current != "]")
+			{
+				subExpr.push_back(current);
+				expression.erase(expression.begin() + foundLoc + 1);
+				current = expression[foundLoc + 1];
+			}
 
-		expression[foundLoc] = "0";
-		expression.erase(expression.begin() + foundLoc + 1); // erasing closing "|"
+			string expressionType = parseExpression(subExpr);
+			if (expressionType == "e")
+			{
+				return "e";
+			}
+			else if (expressionType != "int")
+			{
+				showError(12);
+				return "e";
+			}
+
+			expression[foundLoc] = "\'";
+			expression.erase(expression.begin() + foundLoc + 1); // erasing "]"
+			expression.erase(expression.begin() + foundLoc - 1); // erasing string id
+
+			foundLoc = findFirst(expression, "[");
+		}
 
 		foundLoc = findFirst(expression, "|");
-	}
+		while (foundLoc != -1)
+		{
+			vector<string> subExpr;
+			string current = expression[foundLoc + 1];
+			while (current != "|")
+			{
+				subExpr.push_back(current);
+				expression.erase(expression.begin() + foundLoc + 1);
+				current = expression[foundLoc + 1];
+			}
 
-	foundLoc = findFirst(expression, "&");
-	while (foundLoc != -1)
-	{
-		if (tokenType(&expression[foundLoc + 1]) == "int")
-		{
-			expression[foundLoc] = "*0";
-			expression.erase(expression.begin() + foundLoc + 1);
-		}
-		else if (tokenType(&expression[foundLoc + 1]) == "char") // indexed strings just evaluate to char
-		{
-			expression[foundLoc] = "*\'";
-			expression.erase(expression.begin() + foundLoc + 1);
-		}
-		else
-		{
-			showError(17);
-			return "e";
+			string subExprType = parseExpression(subExpr);
+			if (subExprType == "e")
+			{
+				return "e";
+			}
+			else if (subExprType != "int")
+			{
+				showError(15);
+				return "e";
+			}
+
+			expression[foundLoc] = "0";
+			expression.erase(expression.begin() + foundLoc + 1); // erasing closing "|"
+
+			foundLoc = findFirst(expression, "|");
 		}
 
 		foundLoc = findFirst(expression, "&");
-	}
+		while (foundLoc != -1)
+		{
+			if (tokenType(&expression[foundLoc + 1]) == "int")
+			{
+				expression[foundLoc] = "*0";
+				expression.erase(expression.begin() + foundLoc + 1);
+			}
+			else if (tokenType(&expression[foundLoc + 1]) == "char") // indexed strings just evaluate to char
+			{
+				expression[foundLoc] = "*\'";
+				expression.erase(expression.begin() + foundLoc + 1);
+			}
+			else
+			{
+				showError(17);
+				return "e";
+			}
 
-	foundLoc = findFirst(expression, "^");
-	while (foundLoc != -1)
-	{
-		if (tokenType(&expression[foundLoc + 1]) == "*int")
-		{
-			expression[foundLoc] = "0";
-			expression.erase(expression.begin() + foundLoc + 1);
-		}
-		else if (tokenType(&expression[foundLoc + 1]) == "*char")
-		{
-			expression[foundLoc] = "\'";
-			expression.erase(expression.begin() + foundLoc + 1);
-		}
-		else
-		{
-			showError(18);
-			return "e";
+			foundLoc = findFirst(expression, "&");
 		}
 
 		foundLoc = findFirst(expression, "^");
-	}
+		while (foundLoc != -1)
+		{
+			if (tokenType(&expression[foundLoc + 1]) == "*int")
+			{
+				expression[foundLoc] = "0";
+				expression.erase(expression.begin() + foundLoc + 1);
+			}
+			else if (tokenType(&expression[foundLoc + 1]) == "*char")
+			{
+				expression[foundLoc] = "\'";
+				expression.erase(expression.begin() + foundLoc + 1);
+			}
+			else
+			{
+				showError(18);
+				return "e";
+			}
 
-	foundLoc = findFirst(expression, "!");
-	while (foundLoc != -1)
-	{
-		if (tokenType(&expression[foundLoc + 1]) == "bool")
-		{
-			expression[foundLoc] = "true";
-			expression.erase(expression.begin() + foundLoc + 1);
-		}
-		else
-		{
-			showError(15);
-			return "e";
+			foundLoc = findFirst(expression, "^");
 		}
 
 		foundLoc = findFirst(expression, "!");
-	}
+		while (foundLoc != -1)
+		{
+			if (tokenType(&expression[foundLoc + 1]) == "bool")
+			{
+				expression[foundLoc] = "true";
+				expression.erase(expression.begin() + foundLoc + 1);
+			}
+			else
+			{
+				showError(15);
+				return "e";
+			}
 
-	foundLoc = findFirst(expression, "*");
-	while (foundLoc != -1)
-	{
-		string leftToken = tokenType(&expression[foundLoc - 1]);
-		string rightToken = tokenType(&expression[foundLoc + 1]);
-		if (leftToken == "int" && rightToken == "int")
-		{
-			expression[foundLoc] = "0";
-			expression.erase(expression.begin() + foundLoc + 1);
-			expression.erase(expression.begin() + foundLoc - 1);
-		}
-		else if (leftToken[0] == '*' || rightToken[0] == '*')
-		{
-			showError(16);
-			return "e";
-		}
-		else
-		{
-			showError(15);
-			return "e";
+			foundLoc = findFirst(expression, "!");
 		}
 
 		foundLoc = findFirst(expression, "*");
-	}
+		while (foundLoc != -1)
+		{
+			string leftToken = tokenType(&expression[foundLoc - 1]);
+			string rightToken = tokenType(&expression[foundLoc + 1]);
+			if (leftToken == "int" && rightToken == "int")
+			{
+				expression[foundLoc] = "0";
+				expression.erase(expression.begin() + foundLoc + 1);
+				expression.erase(expression.begin() + foundLoc - 1);
+			}
+			else if (leftToken[0] == '*' || rightToken[0] == '*')
+			{
+				showError(16);
+				return "e";
+			}
+			else
+			{
+				showError(15);
+				return "e";
+			}
 
-	foundLoc = findFirst(expression, "/");
-	while (foundLoc != -1)
-	{
-		string leftToken = tokenType(&expression[foundLoc - 1]);
-		string rightToken = tokenType(&expression[foundLoc + 1]);
-		if (leftToken == "int" && rightToken == "int")
-		{
-			expression[foundLoc] = "0";
-			expression.erase(expression.begin() + foundLoc + 1);
-			expression.erase(expression.begin() + foundLoc - 1);
-		}
-		else if (leftToken[0] == '*' || rightToken[0] == '*')
-		{
-			showError(16);
-			return "e";
-		}
-		else
-		{
-			showError(15);
-			return "e";
+			foundLoc = findFirst(expression, "*");
 		}
 
 		foundLoc = findFirst(expression, "/");
-	}
-
-	foundLoc = findFirst(expression, "+");
-	while (foundLoc != -1)
-	{
-		string leftToken = tokenType(&expression[foundLoc - 1]);
-		string rightToken = tokenType(&expression[foundLoc + 1]);
-		//cout<<leftToken<<endl<<rightToken;
-		if (leftToken == "int" && rightToken == "int") //|| leftToken == "float" && rightToken == "float"  || leftToken == "float" && rightToken == "int" || leftToken == "int" && rightToken == "float")
+		while (foundLoc != -1)
 		{
-			expression[foundLoc] = "0";
-			expression.erase(expression.begin() + foundLoc + 1);
-			expression.erase(expression.begin() + foundLoc - 1);
-		}
-
-		else if (leftToken == "float" && rightToken == "float")
-		{
-			expression[foundLoc] = "1";
-			expression.erase(expression.begin() + foundLoc + 1);
-			expression.erase(expression.begin() + foundLoc - 1);
-		}
-
-		else if ((leftToken[0] == '*' && rightToken == "int") || (leftToken == "int" && rightToken[0] == '*'))
-		{
-			string dummyValue;
-			string pointerType;
-			if (leftToken[0] == '*')
+			string leftToken = tokenType(&expression[foundLoc - 1]);
+			string rightToken = tokenType(&expression[foundLoc + 1]);
+			if (leftToken == "int" && rightToken == "int")
 			{
-				pointerType = leftToken.substr(1, leftToken.size());
+				expression[foundLoc] = "0";
+				expression.erase(expression.begin() + foundLoc + 1);
+				expression.erase(expression.begin() + foundLoc - 1);
 			}
-			else // right token is the pointer
+			else if (leftToken[0] == '*' || rightToken[0] == '*')
 			{
-				pointerType = rightToken.substr(1, rightToken.size());
+				showError(16);
+				return "e";
+			}
+			else
+			{
+				showError(15);
+				return "e";
 			}
 
-			if (pointerType == "char")
-			{
-				dummyValue = "\'";
-			}
-			else if (pointerType == "int")
-			{
-				dummyValue = "0";
-			}
-			else if (pointerType == "float")
-			{
-				dummyValue = ".0.";
-			}
-
-			else if (pointerType == "string")
-			{
-				dummyValue = "\"";
-			}
-			else if (pointerType == "bool")
-			{
-				dummyValue = "true";
-			}
-			expression[foundLoc] = "*" + dummyValue;
-			expression.erase(expression.begin() + foundLoc + 1);
-			expression.erase(expression.begin() + foundLoc - 1);
-		}
-		else
-		{
-			showError(15);
-
-			return "error ";
+			foundLoc = findFirst(expression, "/");
 		}
 
 		foundLoc = findFirst(expression, "+");
-	}
-
-	foundLoc = findFirst(expression, "-");
-	while (foundLoc != -1)
-	{
-		string leftToken = tokenType(&expression[foundLoc - 1]);
-		string rightToken = tokenType(&expression[foundLoc + 1]);
-		//cout<<rightToken;
-		if (leftToken == "int" && rightToken == "int" || leftToken == "float" && rightToken == "float" || leftToken == "float" && rightToken == "int" || leftToken == "int" && rightToken == "float")
+		while (foundLoc != -1)
 		{
-			expression[foundLoc] = "0";
-			expression.erase(expression.begin() + foundLoc + 1);
-			expression.erase(expression.begin() + foundLoc - 1);
-		}
-		else if (leftToken[0] == '*' && rightToken == "int")
-		{
-			string dummyValue;
-			string pointerType = leftToken.substr(1, leftToken.size());
-
-			if (pointerType == "char")
+			string leftToken = tokenType(&expression[foundLoc - 1]);
+			string rightToken = tokenType(&expression[foundLoc + 1]);
+			//cout<<leftToken<<endl<<rightToken;
+			if (leftToken == "int" && rightToken == "int") //|| leftToken == "float" && rightToken == "float"  || leftToken == "float" && rightToken == "int" || leftToken == "int" && rightToken == "float")
 			{
-				dummyValue = "\'";
-			}
-			else if (pointerType == "int")
-			{
-				dummyValue = "0";
+				expression[foundLoc] = "0";
+				expression.erase(expression.begin() + foundLoc + 1);
+				expression.erase(expression.begin() + foundLoc - 1);
 			}
 
-			else if (pointerType == "string")
+			else if (leftToken == "float" && rightToken == "float")
 			{
-				dummyValue = "\"";
+				expression[foundLoc] = "1";
+				expression.erase(expression.begin() + foundLoc + 1);
+				expression.erase(expression.begin() + foundLoc - 1);
 			}
-			else if (pointerType == "bool")
+
+			else if ((leftToken[0] == '*' && rightToken == "int") || (leftToken == "int" && rightToken[0] == '*'))
 			{
-				dummyValue = "true";
+				string dummyValue;
+				string pointerType;
+				if (leftToken[0] == '*')
+				{
+					pointerType = leftToken.substr(1, leftToken.size());
+				}
+				else // right token is the pointer
+				{
+					pointerType = rightToken.substr(1, rightToken.size());
+				}
+
+				if (pointerType == "char")
+				{
+					dummyValue = "\'";
+				}
+				else if (pointerType == "int")
+				{
+					dummyValue = "0";
+				}
+				else if (pointerType == "float")
+				{
+					dummyValue = ".0.";
+				}
+
+				else if (pointerType == "string")
+				{
+					dummyValue = "\"";
+				}
+				else if (pointerType == "bool")
+				{
+					dummyValue = "true";
+				}
+				expression[foundLoc] = "*" + dummyValue;
+				expression.erase(expression.begin() + foundLoc + 1);
+				expression.erase(expression.begin() + foundLoc - 1);
 			}
-			expression[foundLoc] = "*" + dummyValue;
-			expression.erase(expression.begin() + foundLoc + 1);
-			expression.erase(expression.begin() + foundLoc - 1);
-		}
-		else
-		{
-			showError(15);
-			return "e";
+			else if (leftToken == "int" && rightToken == "float")
+			{
+
+				leftToken = "float";
+				expression[foundLoc] = "1";
+				expression.erase(expression.begin() + foundLoc + 1);
+				expression.erase(expression.begin() + foundLoc - 1);
+
+				ShowWarning(1);
+			}
+			else if (leftToken == "float" && rightToken == "int")
+			{
+
+				rightToken = "float";
+				expression[foundLoc] = "1";
+				expression.erase(expression.begin() + foundLoc + 1);
+				expression.erase(expression.begin() + foundLoc - 1);
+
+				ShowWarning(1);
+			}
+
+			else
+			{
+				showError(15);
+
+				return "error ";
+			}
+
+			foundLoc = findFirst(expression, "+");
+
+			//  if (tokenType(&expression[foundLoc + 1]) != "Semi-colon")
+			// 	{
+			// 		//string colon = rightToken;
+			//showError(20);
+			// 	return "err";
+
+			// 	}
 		}
 
 		foundLoc = findFirst(expression, "-");
-	}
+		while (foundLoc != -1)
+		{
+			string leftToken = tokenType(&expression[foundLoc - 1]);
+			string rightToken = tokenType(&expression[foundLoc + 1]);
+			//cout<<rightToken<<endl<<leftToken;
 
-	foundLoc = findFirst(expression, "<");
-	while (foundLoc != -1)
-	{
-		if (tokenType(&expression[foundLoc - 1]) == "int" && tokenType(&expression[foundLoc + 1]) == "int" || tokenType(&expression[foundLoc - 1]) == "float" && tokenType(&expression[foundLoc + 1]) == "float" || tokenType(&expression[foundLoc - 1]) == "int" && tokenType(&expression[foundLoc + 1]) == "float" || tokenType(&expression[foundLoc - 1]) == "float" && tokenType(&expression[foundLoc + 1]) == "int")
-		{
-			expression[foundLoc] = "true";
-			expression.erase(expression.begin() + foundLoc + 1);
-			expression.erase(expression.begin() + foundLoc - 1);
-		}
-		else
-		{
-			showError(15);
-			return "e";
+			if (leftToken == "int" && rightToken == "int") //|| leftToken == "float" && rightToken == "float" || leftToken == "float" && rightToken == "int" || leftToken == "int" && rightToken == "float")
+			{
+
+				expression[foundLoc] = "0";
+
+				expression.erase(expression.begin() + foundLoc + 1);
+				expression.erase(expression.begin() + foundLoc - 1);
+			}
+			else if (leftToken == "float" && rightToken == "float") //|| leftToken == "float" && rightToken == "float" || leftToken == "float" && rightToken == "int" || leftToken == "int" && rightToken == "float")
+			{
+
+				expression[foundLoc] = "0";
+
+				expression.erase(expression.begin() + foundLoc + 1);
+				expression.erase(expression.begin() + foundLoc - 1);
+			}
+			else if (leftToken[0] == '*' && rightToken == "int")
+			{
+				string dummyValue;
+				string pointerType = leftToken.substr(1, leftToken.size());
+
+				if (pointerType == "char")
+				{
+					dummyValue = "\'";
+				}
+				else if (pointerType == "int")
+				{
+					dummyValue = "0";
+				}
+
+				else if (pointerType == "string")
+				{
+					dummyValue = "\"";
+				}
+				else if (pointerType == "bool")
+				{
+					dummyValue = "true";
+				}
+				expression[foundLoc] = "*" + dummyValue;
+				expression.erase(expression.begin() + foundLoc + 1);
+				expression.erase(expression.begin() + foundLoc - 1);
+			}
+			else if (leftToken == "int" && rightToken == "float")
+			{
+
+				leftToken = "float";
+				expression[foundLoc] = "1";
+
+				expression.erase(expression.begin() + foundLoc + 1);
+				expression.erase(expression.begin() + foundLoc - 1);
+
+				ShowWarning(1);
+			}
+			else if (leftToken == "float" && rightToken == "int")
+			{
+
+				rightToken = "float";
+				leftToken = "float";
+
+				expression[foundLoc] = "1";
+				expression.erase(expression.begin() + foundLoc + 1);
+				expression.erase(expression.begin() + foundLoc - 1);
+
+				ShowWarning(1);
+			}
+			else
+			{
+				showError(15);
+				return "e";
+			}
+
+			foundLoc = findFirst(expression, "-");
+
+			// if (tokenType(&expression[foundLoc + 1]) != "Semi-colon")
+			// 	{
+			// 		//string colon = rightToken;
+
+			//       	showError(20);
+			// 	return "err";
+			// 	}
 		}
 
 		foundLoc = findFirst(expression, "<");
-	}
+		while (foundLoc != -1)
+		{
+			if (tokenType(&expression[foundLoc - 1]) == "int" && tokenType(&expression[foundLoc + 1]) == "int") //|| tokenType(&expression[foundLoc - 1]) == "float" && tokenType(&expression[foundLoc + 1]) == "float" || tokenType(&expression[foundLoc - 1]) == "int" && tokenType(&expression[foundLoc + 1]) == "float" || tokenType(&expression[foundLoc - 1]) == "float" && tokenType(&expression[foundLoc + 1]) == "int")
+			{
+				expression[foundLoc] = "true";
+				expression.erase(expression.begin() + foundLoc + 1);
+				expression.erase(expression.begin() + foundLoc - 1);
+			}
 
-	foundLoc = findFirst(expression, ">");
-	while (foundLoc != -1)
-	{
-		if (tokenType(&expression[foundLoc - 1]) == "int" && tokenType(&expression[foundLoc + 1]) == "int" || tokenType(&expression[foundLoc - 1]) == "float" && tokenType(&expression[foundLoc + 1]) == "float" || tokenType(&expression[foundLoc - 1]) == "int" && tokenType(&expression[foundLoc + 1]) == "float" || tokenType(&expression[foundLoc - 1]) == "float" && tokenType(&expression[foundLoc + 1]) == "int")
-		{
-			expression[foundLoc] = "true";
-			expression.erase(expression.begin() + foundLoc + 1);
-			expression.erase(expression.begin() + foundLoc - 1);
-		}
-		else
-		{
-			showError(15);
-			return "e";
+			else if (tokenType(&expression[foundLoc - 1]) == "float" && tokenType(&expression[foundLoc + 1]) == "float")
+			{
+				expression[foundLoc] = "true";
+				expression.erase(expression.begin() + foundLoc + 1);
+				expression.erase(expression.begin() + foundLoc - 1);
+			}
+			else if (tokenType(&expression[foundLoc - 1]) == "float" && tokenType(&expression[foundLoc + 1]) == "int")
+			{
+				expression[foundLoc - 1] = "int";
+				expression[foundLoc] = "true";
+
+				expression.erase(expression.begin() + foundLoc + 1);
+				expression.erase(expression.begin() + foundLoc - 1);
+				ShowWarning(1);
+			}
+			else if (tokenType(&expression[foundLoc - 1]) == "int" && tokenType(&expression[foundLoc + 1]) == "float")
+			{
+				expression[foundLoc - 1] = "float";
+				expression[foundLoc] = "true";
+
+				expression.erase(expression.begin() + foundLoc + 1);
+				expression.erase(expression.begin() + foundLoc - 1);
+				ShowWarning(1);
+			}
+
+			else
+			{
+				showError(15);
+				return "e";
+			}
+
+			foundLoc = findFirst(expression, "<");
 		}
 
 		foundLoc = findFirst(expression, ">");
-	}
+		while (foundLoc != -1)
+		{
+			if (tokenType(&expression[foundLoc - 1]) == "int" && tokenType(&expression[foundLoc + 1]) == "int") // || tokenType(&expression[foundLoc - 1]) == "float" && tokenType(&expression[foundLoc + 1]) == "float" || tokenType(&expression[foundLoc - 1]) == "int" && tokenType(&expression[foundLoc + 1]) == "float" || tokenType(&expression[foundLoc - 1]) == "float" && tokenType(&expression[foundLoc + 1]) == "int")
+			{
+				expression[foundLoc] = "true";
+				expression.erase(expression.begin() + foundLoc + 1);
+				expression.erase(expression.begin() + foundLoc - 1);
+			}
+			else if (tokenType(&expression[foundLoc - 1]) == "float" && tokenType(&expression[foundLoc + 1]) == "float")
+			{
+				expression[foundLoc] = "true";
+				expression.erase(expression.begin() + foundLoc + 1);
+				expression.erase(expression.begin() + foundLoc - 1);
+			}
+			else if (tokenType(&expression[foundLoc - 1]) == "float" && tokenType(&expression[foundLoc + 1]) == "int")
+			{
+				expression[foundLoc - 1] = "int";
+				expression[foundLoc] = "true";
 
-	foundLoc = findFirst(expression, "<=");
-	while (foundLoc != -1)
-	{
-		if (tokenType(&expression[foundLoc - 1]) == "int" && tokenType(&expression[foundLoc + 1]) == "int" || tokenType(&expression[foundLoc - 1]) == "float" && tokenType(&expression[foundLoc + 1]) == "float")
-		{
-			expression[foundLoc] = "true";
-			expression.erase(expression.begin() + foundLoc + 1);
-			expression.erase(expression.begin() + foundLoc - 1);
-		}
-		else
-		{
-			showError(15);
-			return "e";
+				expression.erase(expression.begin() + foundLoc + 1);
+				expression.erase(expression.begin() + foundLoc - 1);
+				ShowWarning(1);
+			}
+			else if (tokenType(&expression[foundLoc - 1]) == "int" && tokenType(&expression[foundLoc + 1]) == "float")
+			{
+				expression[foundLoc - 1] = "float";
+				expression[foundLoc] = "true";
+
+				expression.erase(expression.begin() + foundLoc + 1);
+				expression.erase(expression.begin() + foundLoc - 1);
+				ShowWarning(1);
+			}
+
+			else
+			{
+				showError(15);
+				return "e";
+			}
+
+			foundLoc = findFirst(expression, ">");
 		}
 
 		foundLoc = findFirst(expression, "<=");
-	}
+		while (foundLoc != -1)
+		{
+			if (tokenType(&expression[foundLoc - 1]) == "int" && tokenType(&expression[foundLoc + 1]) == "int" || tokenType(&expression[foundLoc - 1]) == "float" && tokenType(&expression[foundLoc + 1]) == "float")
+			{
+				expression[foundLoc] = "true";
+				expression.erase(expression.begin() + foundLoc + 1);
+				expression.erase(expression.begin() + foundLoc - 1);
+			}
+			else
+			{
+				showError(15);
+				return "e";
+			}
 
-	foundLoc = findFirst(expression, ">=");
-	while (foundLoc != -1)
-	{
-		if (tokenType(&expression[foundLoc - 1]) == "int" && tokenType(&expression[foundLoc + 1]) == "int" || tokenType(&expression[foundLoc - 1]) == "float" && tokenType(&expression[foundLoc + 1]) == "float")
-		{
-			expression[foundLoc] = "true";
-			expression.erase(expression.begin() + foundLoc + 1);
-			expression.erase(expression.begin() + foundLoc - 1);
-		}
-		else
-		{
-			showError(15);
-			return "e";
+			foundLoc = findFirst(expression, "<=");
 		}
 
 		foundLoc = findFirst(expression, ">=");
-	}
+		while (foundLoc != -1)
+		{
+			if (tokenType(&expression[foundLoc - 1]) == "int" && tokenType(&expression[foundLoc + 1]) == "int" || tokenType(&expression[foundLoc - 1]) == "float" && tokenType(&expression[foundLoc + 1]) == "float")
+			{
+				expression[foundLoc] = "true";
+				expression.erase(expression.begin() + foundLoc + 1);
+				expression.erase(expression.begin() + foundLoc - 1);
+			}
+			else
+			{
+				showError(15);
+				return "e";
+			}
 
-	foundLoc = findFirst(expression, "==");
-	while (foundLoc != -1)
-	{
-		string leftToken = tokenType(&expression[foundLoc - 1]);
-		string rightToken = tokenType(&expression[foundLoc + 1]);
-		if ((leftToken == "int" && rightToken == "int") || (leftToken == "float" && rightToken == "float") || (leftToken == "char" && rightToken == "char") || (leftToken == "bool" && rightToken == "bool") || ((leftToken == "*int" || leftToken == "*null") && (rightToken == "*int" || rightToken == "*null")) || ((leftToken == "*char" || leftToken == "*null") && (rightToken == "*char" || rightToken == "*null")))
-		{
-			expression[foundLoc] = "true";
-			expression.erase(expression.begin() + foundLoc + 1);
-			expression.erase(expression.begin() + foundLoc - 1);
-		}
-		else
-		{
-			showError(15);
-			return "e";
+			foundLoc = findFirst(expression, ">=");
 		}
 
 		foundLoc = findFirst(expression, "==");
-	}
+		while (foundLoc != -1)
+		{
+			string leftToken = tokenType(&expression[foundLoc - 1]);
+			string rightToken = tokenType(&expression[foundLoc + 1]);
+			if ((leftToken == "int" && rightToken == "int") || (leftToken == "float" && rightToken == "float") || (leftToken == "char" && rightToken == "char") || (leftToken == "bool" && rightToken == "bool") || ((leftToken == "*int" || leftToken == "*null") && (rightToken == "*int" || rightToken == "*null")) || ((leftToken == "*char" || leftToken == "*null") && (rightToken == "*char" || rightToken == "*null")))
+			{
+				expression[foundLoc] = "true";
+				expression.erase(expression.begin() + foundLoc + 1);
+				expression.erase(expression.begin() + foundLoc - 1);
+			}
+			else
+			{
+				showError(15);
+				return "e";
+			}
 
-	foundLoc = findFirst(expression, "!=");
-	while (foundLoc != -1)
-	{
-		string leftToken = tokenType(&expression[foundLoc - 1]);
-		string rightToken = tokenType(&expression[foundLoc + 1]);
-		if ((leftToken == "int" && rightToken == "int") || (leftToken == "char" && rightToken == "char") || (leftToken == "bool" && rightToken == "bool") || ((leftToken == "*int" || leftToken == "*null") && (rightToken == "*int" || rightToken == "*null")) || ((leftToken == "*char" || leftToken == "*null") && (rightToken == "*char" || rightToken == "*null")))
-		{
-			expression[foundLoc] = "true";
-			expression.erase(expression.begin() + foundLoc + 1);
-			expression.erase(expression.begin() + foundLoc - 1);
-		}
-		else
-		{
-			showError(15);
-			return "e";
+			foundLoc = findFirst(expression, "==");
 		}
 
 		foundLoc = findFirst(expression, "!=");
-	}
+		while (foundLoc != -1)
+		{
+			string leftToken = tokenType(&expression[foundLoc - 1]);
+			string rightToken = tokenType(&expression[foundLoc + 1]);
+			if ((leftToken == "int" && rightToken == "int") || (leftToken == "char" && rightToken == "char") || (leftToken == "bool" && rightToken == "bool") || ((leftToken == "*int" || leftToken == "*null") && (rightToken == "*int" || rightToken == "*null")) || ((leftToken == "*char" || leftToken == "*null") && (rightToken == "*char" || rightToken == "*null")))
+			{
+				expression[foundLoc] = "true";
+				expression.erase(expression.begin() + foundLoc + 1);
+				expression.erase(expression.begin() + foundLoc - 1);
+			}
+			else
+			{
+				showError(15);
+				return "e";
+			}
 
-	foundLoc = findFirst(expression, "&&");
-	while (foundLoc != -1)
-	{
-		if (tokenType(&expression[foundLoc - 1]) == "bool" && tokenType(&expression[foundLoc + 1]) == "bool")
-		{
-			expression[foundLoc] = "true";
-			expression.erase(expression.begin() + foundLoc + 1);
-			expression.erase(expression.begin() + foundLoc - 1);
-		}
-		else
-		{
-			showError(15);
-			return "e";
+			foundLoc = findFirst(expression, "!=");
 		}
 
 		foundLoc = findFirst(expression, "&&");
-	}
+		while (foundLoc != -1)
+		{
+			if (tokenType(&expression[foundLoc - 1]) == "bool" && tokenType(&expression[foundLoc + 1]) == "bool")
+			{
+				expression[foundLoc] = "true";
+				expression.erase(expression.begin() + foundLoc + 1);
+				expression.erase(expression.begin() + foundLoc - 1);
+			}
+			else
+			{
+				showError(15);
+				return "e";
+			}
 
-	foundLoc = findFirst(expression, "||");
-	while (foundLoc != -1)
-	{
-		if (tokenType(&expression[foundLoc - 1]) == "bool" && tokenType(&expression[foundLoc + 1]) == "bool")
-		{
-			expression[foundLoc] = "true";
-			expression.erase(expression.begin() + foundLoc + 1);
-			expression.erase(expression.begin() + foundLoc - 1);
-		}
-		else
-		{
-			showError(15);
-			return "e";
+			foundLoc = findFirst(expression, "&&");
 		}
 
 		foundLoc = findFirst(expression, "||");
-	}
-
-	foundLoc = findFirst(expression, "int");
-	foundLoc = findFirst(expression, "float");
-
-	while (foundLoc != -1)
-	{
-		//if(tokenType(&))
-	}
-
-	return tokenType(&expression[0]);
-}
-
-string tokenType(string *token)
-{
-	unordered_map<string, symbolInfo *>::iterator it = symbolTable.find(*token);
-	char first = (*token)[0];
-	//char second = (*token)[1];
-	string pointerAdd = "";
-	if (first == '*') // pointer "literal" signifier, can't exist in the input file but is used in the expression parser as a dummy value
-	{
-		pointerAdd = "*";
-		*token = token->substr(1, token->size());
-		first = (*token)[0];
-	}
-
-	if (it != symbolTable.end()) // if in symbol table
-	{
-		return (it->second)->getType();
-	}
-	else if (token->find("\"") != string::npos) // if not in symbol table, must be a literal to be valid
-	{
-		return pointerAdd + "string";
-	}
-	else if (token->find("\'") != string::npos || *token == "]")
-	{
-		return pointerAdd + "char";
-	}
-	else if (token->find(";") != string::npos)
-	{
-		return pointerAdd + "Semi-colon";
-	}
-	else if (first > 47 && first < 58)
-	{
-
-		if (token->find(".") != string::npos)
+		while (foundLoc != -1)
 		{
-			return pointerAdd + "float";
+			if (tokenType(&expression[foundLoc - 1]) == "bool" && tokenType(&expression[foundLoc + 1]) == "bool")
+			{
+				expression[foundLoc] = "true";
+				expression.erase(expression.begin() + foundLoc + 1);
+				expression.erase(expression.begin() + foundLoc - 1);
+			}
+			else
+			{
+				showError(15);
+				return "e";
+			}
+
+			foundLoc = findFirst(expression, "||");
+		}
+
+		foundLoc = findFirst(expression, "int");
+		foundLoc = findFirst(expression, "float");
+
+		while (foundLoc != -1)
+		{
+			//if(tokenType(&))
+		}
+
+		return tokenType(&expression[0]);
+	}
+
+	string tokenType(string * token)
+	{
+		unordered_map<string, symbolInfo *>::iterator it = symbolTable.find(*token);
+		char first = (*token)[0];
+		//char second = (*token)[1];
+		string pointerAdd = "";
+		if (first == '*') // pointer "literal" signifier, can't exist in the input file but is used in the expression parser as a dummy value
+		{
+			pointerAdd = "*";
+			*token = token->substr(1, token->size());
+			first = (*token)[0];
+		}
+
+		if (it != symbolTable.end()) // if in symbol table
+		{
+			return (it->second)->getType();
+		}
+		else if (token->find("\"") != string::npos) // if not in symbol table, must be a literal to be valid
+		{
+			return pointerAdd + "string";
+		}
+		else if (token->find("\'") != string::npos || *token == "]")
+		{
+			return pointerAdd + "char";
+		}
+		else if (token->find(";") != string::npos)
+		{
+			return pointerAdd + "Semi-colon";
+		}
+		else if (first > 47 && first < 58)
+		{
+
+			if (token->find(".") != string::npos)
+			{
+				return pointerAdd + "float";
+			}
+			else
+			{
+				return pointerAdd + "int";
+			}
+		}
+		else if (*token == "true" || *token == "false")
+		{
+			return pointerAdd + "bool";
 		}
 		else
 		{
-			return pointerAdd + "int";
-		}
-	}
-	else if (*token == "true" || *token == "false")
-	{
-		return pointerAdd + "bool";
-	}
-	else
-	{
-		if (pointerAdd == "*")
-		{
-			return "*null"; // null pointer
-		}
-		return "void";
-	}
-}
-
-int findFirst(vector<string> vect, string search)
-{
-	for (int i = 0; i < vect.size(); i++)
-	{
-		if (vect[i] == search)
-		{
-			return i;
-		}
-	}
-	return -1; // search not found
-}
-
-bool functionCheck(vector<string> function)
-{
-	unordered_map<string, symbolInfo *>::iterator it = symbolTable.find(function[0]);
-	if (it != symbolTable.end() && (it->second)->getScope() <= fileScope)
-	{
-		vector<string> arguments;
-		string next = function[2]; // start past the first ( of the function call
-		int i = 0;
-		while (next != ")")
-		{
-			if (next != ",")
+			if (pointerAdd == "*")
 			{
-				arguments.push_back(tokenType(&next));
+				return "*null"; // null pointer
 			}
-			i++;
-			next = function[2 + i];
+			return "void";
 		}
+	}
 
-		vector<string> storedArguments = (it->second)->getArguments();
-		if (arguments.size() != storedArguments.size())
+	int findFirst(vector<string> vect, string search)
+	{
+		for (int i = 0; i < vect.size(); i++)
 		{
-			showError(6);
-			return false;
-		}
-		for (i = 0; i < arguments.size(); i++)
-		{
-			if (arguments[i] != storedArguments[i])
+			if (vect[i] == search)
 			{
-				showError(7);
+				return i;
+			}
+		}
+		return -1; // search not found
+	}
+
+	bool functionCheck(vector<string> function)
+	{
+		unordered_map<string, symbolInfo *>::iterator it = symbolTable.find(function[0]);
+		if (it != symbolTable.end() && (it->second)->getScope() <= fileScope)
+		{
+			vector<string> arguments;
+			string next = function[2]; // start past the first ( of the function call
+			int i = 0;
+			while (next != ")")
+			{
+				if (next != ",")
+				{
+					arguments.push_back(tokenType(&next));
+				}
+				i++;
+				next = function[2 + i];
+			}
+
+			vector<string> storedArguments = (it->second)->getArguments();
+			if (arguments.size() != storedArguments.size())
+			{
+				showError(6);
 				return false;
 			}
+			for (i = 0; i < arguments.size(); i++)
+			{
+				if (arguments[i] != storedArguments[i])
+				{
+					showError(7);
+					return false;
+				}
+			}
+		}
+		else // function does not exist in the current scope
+		{
+			showError(5);
+			return false;
+		}
+		return true;
+	}
+
+	void ShowWarning(int code)
+	{
+		cout << "Warning " << code << "   on line  " << lineNo << " : ";
+		switch (code)
+		{
+		case 1:
+			cout << " TYPE MISMATCH : types converted implicitly" << endl;
+			break;
 		}
 	}
-	else // function does not exist in the current scope
-	{
-		showError(5);
-		return false;
-	}
-	return true;
-}
 
-void ShowWarning( int code){
-	cout<< "Warning "  <<   code   << "   on line  " << lineNo << " : ";
-	switch(code){
+	void showError(int code)
+	{
+		cout << "Error " << code << " on line " << lineNo << " : ";
+		switch (code)
+		{
 		case 1:
-			cout << " Mismatched assignment  , Resolved Automatically." << endl;
+			cout << "Multiple Main cannot exist." << endl;
 			break;
-	}
-}
+		case 2:
+			cout << "Main cannot have arguments." << endl;
+			break;
+		case 3:
+			cout << "Procedure appears multiple times." << endl;
+			break;
+		case 4:
+			cout << "Variable appears multiple times." << endl;
+			break;
+		case 5:
+			cout << "This procedure does not exist in the current scope." << endl;
+			break;
+		case 6:
+			cout << "The number of arguments passed is incorrect." << endl;
+			break;
+		case 7:
+			cout << "The type of the arguments passed are incorrect." << endl;
+			break;
+		case 8:
+			cout << "Invalid return type." << endl;
+			break;
+		case 9:
+			cout << "This procedure does not return the same data type as what it is being assigned to." << endl;
+			break;
+		case 10:
+			cout << "if statement arguments must be of type bool." << endl;
+			break;
+		case 11:
+			cout << "while statement arguments must be of type bool." << endl;
+			break;
+		case 12:
+			cout << "Cannot use a non-integer value to index a String." << endl;
+			break;
+		case 13:
+			cout << "Non-String variables cannot be indexed." << endl;
+			break;
+		case 14:
+			cout << "Invalid assignment due to mismatched data types." << endl;
+			break;
+		case 15:
+			cout << "Undeclared or Incorrect use of operands." << endl;
+			break;
+		case 16:
+			cout << "Can only add and subtract to pointers." << endl;
+			break;
+		case 17:
+			cout << "Cannot use addressOf on non-integer/char/string-index values." << endl;
+			break;
+		case 18:
+			cout << "Cannot use deref on non-integer-pointer/char-pointer values." << endl;
+			break;
+		case 19:
+			cout << " Missing  Brace  ." << endl;
+		case 20:
+			cout << " Missing  Semi-colon or identifier  ." << endl;
 
-void showError(int code)
-{
-	cout << "Error " << code << " on line " << lineNo << " : ";
-	switch (code)
-	{
-	case 1:
-		cout << "Multiple Main cannot exist." << endl;
-		break;
-	case 2:
-		cout << "Main cannot have arguments." << endl;
-		break;
-	case 3:
-		cout << "Procedure appears multiple times." << endl;
-		break;
-	case 4:
-		cout << "Variable appears multiple times." << endl;
-		break;
-	case 5:
-		cout << "This procedure does not exist in the current scope." << endl;
-		break;
-	case 6:
-		cout << "The number of arguments passed is incorrect." << endl;
-		break;
-	case 7:
-		cout << "The type of the arguments passed are incorrect." << endl;
-		break;
-	case 8:
-		cout << "Invalid return type." << endl;
-		break;
-	case 9:
-		cout << "This procedure does not return the same data type as what it is being assigned to." << endl;
-		break;
-	case 10:
-		cout << "if statement arguments must be of type bool." << endl;
-		break;
-	case 11:
-		cout << "while statement arguments must be of type bool." << endl;
-		break;
-	case 12:
-		cout << "Cannot use a non-integer value to index a String." << endl;
-		break;
-	case 13:
-		cout << "Non-String variables cannot be indexed." << endl;
-		break;
-	case 14:
-		cout << "Invalid assignment due to mismatched data types." << endl;
-		break;
-	case 15:
-		cout << "Undeclared or Incorrect use of operands." << endl;
-		break;
-	case 16:
-		cout << "Can only add and subtract to pointers." << endl;
-		break;
-	case 17:
-		cout << "Cannot use addressOf on non-integer/char/string-index values." << endl;
-		break;
-	case 18:
-		cout << "Cannot use deref on non-integer-pointer/char-pointer values." << endl;
-		break;
-	case 19:
-		cout << " Missing  Brace  ." << endl;
-	case 20:
-		cout << " Missing  Semi-colon ." << endl;
-		
-	default:
-		cout << "Undefined error." << endl;
-		break;
+		default:
+			cout << "Undefined error." << endl;
+			break;
+		}
+		cout << "Parser Crashed.";
 	}
-	cout << "Type check failed.";
-}

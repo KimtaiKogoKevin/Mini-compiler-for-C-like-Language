@@ -1,11 +1,12 @@
- float a;
- a=35;
- int b;
- b=16;
-  if (b>6)
-   {
-     a = a + 13.7 ;
-     }else {
-       b= a - 16.4 ;
-       }
- 
+float a;
+a = 35;
+float b;
+b = 16;
+if(a > 6.7)
+{
+  a = a + 13.5;
+}
+else
+{
+  b = b - 16.7
+}
